@@ -10,6 +10,7 @@ import * as z from "zod";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import Image from "next/image";
+import { useSearchParams, useRouter } from "next/navigation";
 
 
 const loginSchema = z.object({
@@ -21,6 +22,9 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const callbackUrl = searchParams.get("callbackUrl") || "/okrs";
   const {
     register,
     handleSubmit,
@@ -35,9 +39,10 @@ export default function LoginPage() {
       redirect: false,
       email: data.email,
       password: data.password,
+      callbackUrl, // Best Practice: pass callbackUrl for post-login redirect
     });
     if (res?.error) setError("Uh-oh! Your email or password isn’t correct. Try again or reset your password.");
-    // TODO: redirect on success
+    if (res?.ok) router.replace(callbackUrl); // Redirect on success
   }
 
   return (
