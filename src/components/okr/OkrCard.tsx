@@ -12,12 +12,14 @@ interface KeyResultCard {
   unit?: string;
 }
 
+// Step 2: Refine card layout per Design_Prompts and Best_Practices.md
 interface OkrCardProps {
   objective: string;
   dueDate: string;
   status: string;
   keyResults: KeyResultCard[];
   lastUpdated: string;
+  owner?: string; // Optional owner name or username
 } // keyResultCount removed, not needed
 
 export const OkrCard: React.FC<OkrCardProps> = ({
@@ -26,35 +28,32 @@ export const OkrCard: React.FC<OkrCardProps> = ({
   status,
   keyResults,
   lastUpdated,
+  owner,
 }) => {
   // Status color mapping based on design prompt
+  // Step 2: Use correct status tag color mapping from design prompt
   const statusColors: Record<string, string> = {
     "On Track": "#B3BCC5",
     "Off Track": "#FF7600",
     "At Risk": "#FF2538",
     "Completed": "#53BA00",
+    // fallback for legacy values
+    "active": "#0071E1",
+    "archived": "#B3BCC5",
+    "completed": "#53BA00",
+    "on_hold": "#FF7600",
+    "cancelled": "#FF2538",
   };
   return (
     <Card className="transition-shadow hover:shadow-lg">
       <div className="p-4">
         <h2 className="text-xl font-semibold mb-2">{objective}</h2>
+        {/* Status tag per design prompt */}
         <div className="flex items-center mb-2">
-          <span className="text-sm text-gray-500 mr-2">Due: {dueDate}</span>
           <span
-            className={
-              `inline-block rounded-full px-3 py-1 text-xs font-semibold capitalize ` +
-              (status === "active"
-                ? "bg-blue-100 text-blue-700"
-                : status === "completed"
-                ? "bg-green-100 text-green-700"
-                : status === "archived"
-                ? "bg-gray-200 text-gray-700"
-                : status === "on_hold"
-                ? "bg-yellow-100 text-yellow-800"
-                : status === "cancelled"
-                ? "bg-red-100 text-red-700"
-                : "bg-gray-100 text-gray-700")
-            }
+            className="inline-block rounded-full px-3 py-1 text-xs font-semibold capitalize"
+            style={{ backgroundColor: statusColors[status] || '#B3BCC5', color: '#fff' }}
+            aria-label={`Status: ${status}`}
           >
             {status}
           </span>
@@ -82,9 +81,17 @@ export const OkrCard: React.FC<OkrCardProps> = ({
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-xs text-gray-400">{(Array.isArray(keyResults) ? keyResults.length : 0)} Key Results</span>
-          <span className="text-xs text-gray-400">Last updated: {lastUpdated}</span>
+        {/* Step 2: Subtext row per design prompt, accessible and with dividers */}
+        <div className="flex items-center justify-between mt-4 text-xs text-gray-500" role="contentinfo" aria-label="OKR details">
+          <div className="flex items-center gap-2 w-full">
+            {owner && (
+              <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid cursor-pointer transition-all" tabIndex={0} aria-label={`Owner: ${owner}`}>{owner}</span>
+            )}
+            {owner && <span className="mx-2 text-gray-300 select-none" aria-hidden="true">|</span>}
+            <span>Due: {dueDate}</span>
+            <span className="mx-2 text-gray-300 select-none" aria-hidden="true">|</span>
+            <span>Last updated: {lastUpdated}</span>
+          </div>
         </div>
       </div>
     </Card>

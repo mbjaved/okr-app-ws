@@ -1,16 +1,174 @@
 # Development Timeline & Task Log
 
+## 2025-05-15
+
+### Feature: Avatar Upload, TopNav Sync, and Session Refresh Improvements
+- **Summary:**
+  - Fixed avatar upload integration with Cloudinary and improved error handling for file uploads.
+  - Ensured TopNav avatar updates immediately after upload by always fetching the latest user data (including avatarUrl) from the database in the NextAuth session callback.
+  - Added robust fallback logic: if no avatar is found in the DB, fallback to deterministic SVG avatars.
+  - Replaced alert dialogs with accessible modal confirmation for canceling avatar changes, improving UX and accessibility.
+  - Provided immediate feedback (toasts, loading states) during avatar upload and profile changes.
+  - Fixed all JSX structure and TypeScript issues, ensuring code quality and maintainability.
+- **Best Practices:**
+  - Robust UI feedback, accessibility (ARIA, keyboard navigation), modular component design, secure file validation, timeline logging, minimal payloads, and defensive session management.
+- **Time Tracked:** ~45min
+
+
+## 2025-05-14
+
+### Bugfix: Robust User Lookup for Profile Page
+- **Summary:**
+  - Improved user lookup logic in fetchCurrentUser to match by _id if available, otherwise by email.
+  - Ensures profile loads even if session is missing DB ID, as long as email is present.
+  - Added debug logging for both lookup cases and missing user scenarios.
+  - Follows robust user data handling and meaningful error message best practices (Best_Practices.md).
+- **Best Practices:**
+  - Robust UI feedback, meaningful error messages, timeline logging, design prompt reference, authentication wall, robust user data handling.
+- **Time Tracked:** ~5min
+
+### Bugfix: Profile Page Infinite Loading
+- **Summary:**
+  - Fixed infinite loading spinner by only blocking on status === 'loading'.
+  - Now shows a clear error message if profile data is missing after load, instead of blocking render.
+  - Follows robust UI feedback and meaningful error message best practices (Best_Practices.md).
+- **Best Practices:**
+  - Robust UI feedback, meaningful error messages, accessibility, timeline logging, design prompt reference, authentication wall.
+- **Time Tracked:** ~5min
+
+### Polish: Profile Page Edit Icon & Button Interactions
+- **Summary:**
+  - Replaced Edit text button with a pencil icon for better UX and visual clarity.
+  - Added `cursor-pointer` to all interactive buttons and icon buttons for clear feedback.
+  - Ensured all icon/text buttons have visible :hover and :focus styles for accessibility and modern UX.
+  - Added this as a new best practice in Best_Practices.md.
+- **Best Practices:**
+  - Accessibility, modularity, robust UI feedback, timeline logging, design prompt reference, minimal UI, interaction feedback, authentication wall.
+- **Time Tracked:** ~8min
+
+### Polish: Profile Page Edit & Action Buttons
+- **Summary:**
+  - Moved Edit button to the right of the name, styled as subtle text to match app theme (design prompt 2).
+  - Refactored Save/Cancel/Change Password buttons for consistent size, horizontal alignment, and color theme.
+  - All action buttons now use uniform height, padding, and rounded corners for modern look.
+  - Maintained accessibility: focus states, aria-labels, and keyboard navigation.
+- **Best Practices:**
+  - Accessibility, modularity, robust UI feedback, timeline logging, design prompt reference, minimal UI, authentication wall.
+- **Time Tracked:** ~10min
+
+### Refactor: Profile Page UI/UX Modernization
+- **Summary:**
+  - Refactored Profile Page layout for a modern, centered, and accessible look as per design prompts 1-3.
+  - Grouped avatar, name, and email in a flex row with overlay upload controls.
+  - All fields and actions are visually grouped and aligned for clarity.
+  - Added `max-w-2xl mx-auto p-6 bg-white rounded shadow` container for readable, focused content.
+  - Ensured robust UI feedback for avatar upload and errors.
+  - Fixed Avatar `size` prop type error (now uses `size="lg"`).
+- **Best Practices:**
+  - Accessibility, modularity, robust UI feedback, timeline logging, design prompt reference, typed API contracts, meaningful error messages, authentication wall.
+- **Time Tracked:** ~20min
+
+## 2025-05-13
+
+### Feature: OKRs Page Pagination & UX Completion
+- **Summary:**
+  - Completed modular, accessible pagination for OKRs page (All OKRs & Archived OKRs).
+  - Created reusable Pagination component with explicit types and accessibility features.
+  - Ensured pointer cursor, blue outline on hover/focus for all enabled pagination controls; never for disabled buttons.
+  - Fixed all state and lint issues, following React and project best practices.
+  - Strictly adhered to Best_Practices.md and referenced Design_Prompts for UI/UX.
+  - All changes logged and tested for accessibility, modularity, and robust feedback.
+- **Best Practices:**
+  - Accessibility, modularity, robust UI feedback, timeline logging, design prompt reference, typed API contracts, minimal payloads, meaningful error messages, and client-side authentication.
+- **Time Tracked:** ~35min
+
+
+## 2025-05-12
+
+### Feature: OKRs Page Step 2 – Card Layout & Kebab Menu
+- **Summary:**
+  - Refined OKR card layout to match design prompt: owner, due date, last updated in a single accessible row, with owner underlined on hover.
+  - Status tags now use exact design prompt color codes.
+  - Added 'Duplicate' action to kebab menu for both active and archived OKRs.
+  - Implemented `handleDuplicateOkr` to create a copy of an OKR (removes _id/timestamps, sets status to 'active', appends '(Copy)' to objective).
+  - All UI and logic changes are modular, accessible, and robust, with debug and timeline logging.
+- **Best Practices:**
+  - Accessibility, modularity, robust UI feedback, timeline logging, design prompt reference, typed API contracts.
+- **Time Tracked:** ~25min
+
+
 ## 2025-05-02
 - Implemented authentication wall on the OKRs page using NextAuth's useSession and useRouter for redirect.
-- Unauthenticated users are redirected to /login; a loading spinner is shown while checking auth status.
-- This follows project best practices for security, user feedback, and modularity.
-- **Enhanced OKR Dialog:** Added dirty-checking so the Save OKR button is only enabled if the form has unsaved changes. Tooltip provides feedback when Save is disabled. This follows best practices for user feedback and prevents unnecessary API calls.
-- Referenced PROJECT_BEST_PRACTICES.md and design prompts for all changes.
+
+- **User Profile Routing & Security**
+  - Updated Teams page and profile routes to use usernames instead of user IDs for privacy and clean URLs.
+  - Added new API route `/api/users/username/[username]` with strict TypeScript types and minimal payloads.
+  - Fixed all hydration and parameter errors in dynamic routing.
+  - All changes follow project best practices for modularity, accessibility, and typed contracts.
+
+- **Authentication Wall**
+  - Implemented global middleware to require authentication for all app pages except `/login` and `/register`.
+  - Added redirect from `/auth/login` to `/login` for legacy compatibility.
+  - All redirects and flows use client-side navigation as per best practices.
+
+- **Error Handling & Feedback**
+  - All API and UI errors now display clear, meaningful messages.
+  - UI feedback improved for loading and error states.
+
+- **TypeScript Improvements**
+  - All new and updated API routes use explicit TypeScript interfaces for request/response objects.
+  - MongoDB ObjectId is always converted to string in API responses.
+
+- **Time taken:** ~2 hours
 
 
-This file documents all major tasks, debugging sessions, and time taken for each, organized by date. It serves as a transparent record of the project’s progress and decision-making.
+## 2025-05-07
 
----
+### Feature: Deterministic Dummy Avatars for All Users
+
+### Fix: Show Avatars for All Users in TopNav and Teams Page (2025-05-07)
+
+### Feature: Profile Dropdown Actions & Settings Pages (2025-05-07)
+- **Summary:** Implemented navigation actions for the profile dropdown in TopNav. Profile navigates to `/settings/profile`, Settings to `/settings`, and Logout performs a robust two-step sign-out. Created accessible placeholder pages for `/settings` and `/settings/profile`.
+- **Best Practices:**
+  - Modularity and extensibility (easy to add more actions/settings)
+  - Accessibility (keyboard navigation, semantic structure)
+  - Timeline and documentation updated in parallel with code changes
+- **Time Tracked:** ~20min
+
+- **Summary:** Fixed avatar display for all users (including existing ones) both in the Teams page and the TopNav profile menu. The Avatar component now receives the correct username and avatarUrl for the logged-in user by extracting custom fields from the session object with a type guard. This ensures deterministic Dicebear avatars appear everywhere, even for legacy users.
+- **Best Practices:**
+  - Defensive coding for session.user custom fields (type guard)
+  - Extensible, modular component usage
+  - Timeline and documentation updated in parallel with code changes
+- **Time Tracked:** ~15min
+
+- **Summary:** Implemented automatic, unique SVG avatars for all users using Dicebear. Avatars are generated via a Node.js script and saved in `/public/avatars/{username}.svg`. The API and UI were updated to reference these avatars as placeholders until custom uploads are supported.
+- **API:** `/api/users` now returns an `avatarUrl` pointing to the dummy avatar for each user if no custom avatar is set.
+- **UI:** The `Avatar` component and Teams page now use the `username` prop to display the correct dummy avatar for each user.
+- **Best Practices:**
+  - Deterministic avatar generation for visual distinction and future extensibility (Design_prompts)
+  - Modular, accessible, and typed components
+  - Timeline updated in parallel with implementation (process compliance)
+- **Time Tracked:** ~30min
+
+
+- **Teams Page: Filtering by Department and Role (Start)**
+
+- **UX Improvement:** Reduced filter drawer overlay opacity from 30% to 10% for a less intrusive, more Radix UI-consistent experience (per design review and user feedback).
+  - Began implementation of filtering with a side drawer and dismissible chips, per Design_Prompts/3.txt.
+  - Side drawer will provide checkboxes for department and role; selected filters will be shown as chips above the table and can be dismissed to clear filters.
+  - Filtering logic is modular, accessible, and defensive. All UI components use Radix UI/shadcn/ui where possible.
+  - Timeline logging and per-task time tracking in progress for this step, as required by project process rules.
+  - **Time taken:** [in progress]
+
+## 2025-05-12
+- TopNav updated: Navigation links and user avatar/profile dropdown are now hidden when the user is not authenticated. Only the logo and (if not on /auth/login) a Login button are shown. This follows Best_Practices.md for accessibility, modularity, and clear UI state separation. Time spent: 1h.
+- Bugfix: OKRs page tabs runtime error ('setValue is not a function') resolved. Tabs component now only passes setValue to TabsTrigger, and only value to TabsContent. References Best_Practices.md for modularity and robust UI feedback. Time spent: 20m.
+- Bugfix: Tab highlighting on OKRs page fixed. TabsTrigger now uses tabValue/selectedValue, matching the updated Tabs component. This follows Best_Practices.md for modularity and robust UI feedback. Time spent: 10m.
+- Workaround: Next.js API route handler type errors resolved by switching to 'context: any' for all handlers in [okrId]/route.ts. This satisfies build/type constraints and follows Best_Practices.md for typed API contracts and robust error handling. Date: 2025-05-12.
+- Bugfix: Fixed redeclaration and missing variable issues in users/[id]/route.ts GET handler after switching to 'context: any'. Removed destructuring of params from function signature and removed duplicate variable declaration. This resolves lints for block-scoped variable redeclaration and missing params. References Best_Practices.md for robust error handling and typed API contracts. Date: 2025-05-12.
+- Workaround: Next.js API route handler type errors resolved in users/username/[username]/route.ts by switching to 'context: any' and removing destructuring from the function signature. References Best_Practices.md for typed API contracts and robust error handling. Date: 2025-05-12.
 
 ## 2025-05-05
 

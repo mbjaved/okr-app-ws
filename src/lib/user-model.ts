@@ -7,6 +7,7 @@ export type UserType = {
   email: string;
   password: string;
   role: string;
+  avatarUrl?: string;
   department?: string;
   designation?: string;
   manager?: string;
@@ -25,6 +26,7 @@ export const User = {
       email: doc.email,
       password: doc.password,
       role: doc.role || 'User',
+      avatarUrl: doc.avatarUrl || '',
       department: doc.department || '-',
       designation: doc.designation || '-',
       manager: doc.manager || '',

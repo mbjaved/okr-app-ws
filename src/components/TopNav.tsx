@@ -20,10 +20,36 @@ const navLinks = [
 ];
 
 const TopNav: React.FC = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Best_Practices.md: Only show nav links/avatar if authenticated
+  const isAuthenticated = status === 'authenticated' && !!session;
+  // Fix: The login page is at '/login', not '/auth/login'.
+  const isLoginPage = pathname === '/login';
+
+  if (!isAuthenticated) {
+    return (
+      <nav
+        className="fixed top-0 left-0 w-full z-50 bg-white shadow-xl border-b border-gray-100 px-6 py-3 flex items-center justify-between"
+        role="navigation"
+        aria-label="Main navigation"
+      >
+        <Logo />
+        {/* Best_Practices.md: Show login button if not on login page for accessibility */}
+        {!isLoginPage && (
+          <button
+            className="ml-auto px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+            onClick={() => router.push('/login')}
+          >
+            Login
+          </button>
+        )}
+      </nav>
+    );
+  }
 
   // Navigation link checker (could add more robust logic if needed)
   const isActive = (href: string) => {

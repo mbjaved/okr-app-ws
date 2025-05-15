@@ -54,6 +54,7 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
     return JSON.stringify(a) === JSON.stringify(b);
   }
   const isDirty = React.useMemo(() => {
+    if (!initialData) return true; // Always allow save for new OKR
     // Normalize initial values
     const initialObjective = initialData?.objective || "";
     const initialDescription = initialData?.description || "";
@@ -80,6 +81,15 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
       !deepEqual(currentKeyResults, initialKeyResults)
     );
   }, [objective, description, departmentId, startDate, endDate, keyResults, initialData]);
+
+  // New: Only enable Save if all required fields are filled and at least one valid key result
+  const isFormValid = React.useMemo(() => {
+    if (!objective.trim() || !startDate || !endDate) return false;
+    if (!Array.isArray(keyResults) || keyResults.length === 0) return false;
+    // At least one KR with a non-empty title
+    const hasValidKR = keyResults.some(kr => kr.title && kr.title.trim());
+    return hasValidKR;
+  }, [objective, startDate, endDate, keyResults]);
 
   // Best Practice: Robust state reset on dialog open, always treat KRs as array, log for transparency
   useEffect(() => {
@@ -177,34 +187,34 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (saving) return;
-    console.log('[OkrDialog] handleSubmit called');
-    const isValid = validate();
-    console.log('[OkrDialog] Validation result:', isValid);
-    if (!isValid) return;
-    setSaving(true);
-    try {
-      const okrData = {
-        objective,
-        description,
-        departmentId,
-        startDate,
-        endDate,
-        keyResults,
-      };
-      console.log('[OkrDialog] Submitting OKR data:', okrData);
-      await onSave(okrData); // Await to ensure parent handles modal close
-      setSaving(false);
-      // Best Practice: Close modal and reset state after successful save
-      if (onClose) onClose();
-    } catch (err: any) {
-      setSaving(false);
-      // Best Practice: Show error to user
-      setErrors({ form: err?.message || 'Failed to save OKR. Please try again.' });
-      console.error('[OkrDialog] Save failed', err);
-    }
-  };
+  e.preventDefault();
+  if (saving) return;
+  console.log('[OkrDialog] handleSubmit called');
+  const isValid = validate();
+  console.log('[OkrDialog] Validation result:', isValid);
+  if (!isValid) return;
+  setSaving(true);
+  try {
+    const okrData = {
+      objective,
+      description,
+      departmentId,
+      startDate,
+      endDate,
+      keyResults,
+    };
+    console.log('[OkrDialog] Submitting OKR data:', okrData);
+    await onSave(okrData); // Await to ensure parent handles modal close
+    setSaving(false);
+    // Best Practice: Close modal and reset state after successful save
+    if (onClose) onClose();
+  } catch (err: any) {
+    setSaving(false);
+    // Best Practice: Show error to user
+    setErrors({ form: err?.message || 'Failed to save OKR. Please try again.' });
+    console.error('[OkrDialog] Save failed', err);
+  }
+};
 
   const handleClose = () => {
     if (
@@ -375,15 +385,16 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
 ))}
             </div>
           </div>
+          <footer className="sticky bottom-0 bg-white border-t flex justify-end gap-4 p-4">
+            <Button variant="secondary" type="button" onClick={handleClose}>Cancel</Button>
+            <span title={!isDirty ? 'No changes to save' : !isFormValid ? 'Fill all required fields' : ''}>
+              <Button variant="primary" type="submit" disabled={saving || !isDirty || !isFormValid}>
+                {saving ? 'Saving...' : 'Save OKR'}
+              </Button>
+            </span>
+          </footer>
         </form>
-        <footer className="sticky bottom-0 bg-white border-t flex justify-end gap-4 p-4">
-          <Button variant="secondary" type="button" onClick={handleClose}>Cancel</Button>
-          <span title={!isDirty ? 'No changes to save' : ''}>
-            <Button variant="primary" type="submit" disabled={saving || !isDirty}>
-              {saving ? 'Saving...' : 'Save OKR'}
-            </Button>
-          </span>
-        </footer>
+
         {showConfirm && (
           <div className="fixed inset-0 z-60 flex items-center justify-center bg-black bg-opacity-40">
             <div className="bg-white rounded shadow-lg p-6 max-w-sm w-full">

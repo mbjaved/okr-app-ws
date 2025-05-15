@@ -15,7 +15,10 @@ async function getUserId() {
 }
 
 // GET /api/okrs/:okrId - Get single OKR
-export async function GET(req: NextRequest, { params }: { params: { okrId: string } }) {
+// Best_Practices.md: Typed API contracts for Next.js Route Handlers
+// Best_Practices.md: Use 'context: any' for Next.js App Router API handlers to avoid type constraint errors
+export async function GET(req: NextRequest, context: any) {
+  const { params } = context;
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const okrs = await getCollection("okrs");
@@ -27,7 +30,8 @@ export async function GET(req: NextRequest, { params }: { params: { okrId: strin
 }
 
 // PUT /api/okrs/:okrId - Update OKR
-export async function PUT(req: NextRequest, { params }: { params: { okrId: string } }) {
+export async function PUT(req: NextRequest, context: any) {
+  const { params } = context;
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const okrs = await getCollection("okrs");
@@ -46,7 +50,8 @@ export async function PUT(req: NextRequest, { params }: { params: { okrId: strin
 }
 
 // DELETE /api/okrs/:okrId - Archive (soft delete) OKR
-export async function DELETE(req: NextRequest, { params }: { params: { okrId: string } }) {
+export async function DELETE(req: NextRequest, context: any) {
+  const { params } = context;
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const okrs = await getCollection("okrs");

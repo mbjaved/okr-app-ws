@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
     department: u.department || "-",
     designation: u.designation || "-",
     okrsCount: u.okrsCount || Math.floor(Math.random() * 5) + 1,
+    manager: u.manager || null,
   }));
   return NextResponse.json(teamUsers);
 }

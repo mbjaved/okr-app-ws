@@ -3,6 +3,8 @@
 // Best Practice: Follows UI/UX and accessibility guidelines from Design_Prompts
 
 import React from "react";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
 import useSWR from "swr";
 
 import { Table, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
@@ -14,7 +16,22 @@ const PAGE_SIZE = 8;
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
+import { redirect } from 'next/navigation';
+
 export default function TeamPage() {
+  const { data: session, status } = useSession();
+
+  // If loading, optionally show a spinner (optional UX improvement)
+  if (status === 'loading') {
+    return <div className="flex items-center justify-center h-64">Loading...</div>;
+  }
+  // If not authenticated, redirect to /login
+  if (!session) {
+    redirect('/login');
+    return null;
+  }
+  const sessionUserId = session?.user?._id;
+
   const { data: teams, error, isLoading } = useSWR("/api/users", fetcher);
   // Pagination state
   const [page, setPage] = React.useState(1);
@@ -236,23 +253,24 @@ export default function TeamPage() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Avatar src={user.avatarUrl} username={user.username} alt={user.username} size="sm" />
-                        <a
-                          href="#"
-                          className="text-[#0071E1] hover:underline font-medium"
+                        <Link
+                          href={user._id === sessionUserId ? "/settings/profile" : `/profile/${encodeURIComponent(user.username)}`}
+                          className="text-[#0071E1] hover:underline font-medium focus:outline-none"
+                          aria-label={`View profile for ${user.username}`}
                         >
                           {user.username}
-                        </a>
+                        </Link>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge
-  color={user.role === "Admin" ? "green" : "gray"}
-  className={user.role === "Admin" ? "bg-green-100 text-green-800 border border-green-400" : "bg-gray-100 text-gray-800 border border-gray-300"}
->
-  <span title={user.role === "Admin" ? "Administrator" : "Standard User"}>
-    {user.role}
-  </span>
-</Badge>
+                        color={user.role === "Admin" ? "green" : "gray"}
+                        className={user.role === "Admin" ? "bg-green-100 text-green-800 border border-green-400" : "bg-gray-100 text-gray-800 border border-gray-300"}
+                      >
+                        <span title={user.role === "Admin" ? "Administrator" : "Standard User"}>
+                          {user.role}
+                        </span>
+                      </Badge>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.department}</TableCell>
@@ -262,135 +280,134 @@ export default function TeamPage() {
                 ))}
               </TableBody>
             </Table>
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <nav className="flex justify-end items-center gap-2 px-6 py-4" aria-label="Pagination">
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <nav className="flex justify-end items-center gap-2 px-6 py-4" aria-label="Pagination">
+                <button
+                  className="px-3 py-1 rounded border text-sm font-medium bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  onClick={() => setPage(page - 1)}
+                  disabled={page === 1}
+                  aria-label="Previous page"
+                >
+                  Prev
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => (
                   <button
-                    className="px-3 py-1 rounded border text-sm font-medium bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    onClick={() => setPage(page - 1)}
-                    disabled={page === 1}
-                    aria-label="Previous page"
+                    key={i + 1}
+                    className={`px-3 py-1 rounded border text-sm font-medium ${page === i + 1 ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-100'} focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                    onClick={() => setPage(i + 1)}
+                    aria-current={page === i + 1 ? 'page' : undefined}
+                    aria-label={`Page ${i + 1}`}
                   >
-                    Prev
+                    {i + 1}
                   </button>
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <button
-                      key={i + 1}
-                      className={`px-3 py-1 rounded border text-sm font-medium ${page === i + 1 ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-100'} focus:outline-none focus:ring-2 focus:ring-blue-400`}
-                      onClick={() => setPage(i + 1)}
-                      aria-current={page === i + 1 ? 'page' : undefined}
-                      aria-label={`Page ${i + 1}`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                  <button
-                    className="px-3 py-1 rounded border text-sm font-medium bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    onClick={() => setPage(page + 1)}
-                    disabled={page === totalPages}
-                    aria-label="Next page"
-                  >
-                    Next
-                  </button>
-                </nav>
-              )}
-            </>
-          )}
-        </div>
-      </main>
-      {drawerOpen && (
-  <>
-    {/* Overlay: covers the whole viewport, dims but allows click-through to close */}
-    <div
-      className="fixed inset-0 z-40 bg-black bg-opacity-30 transition-opacity duration-200"
-      aria-hidden="true"
-      onClick={() => setDrawerOpen(false)}
-    />
-    {/* Drawer: sits above the overlay, aligned right */}
-    <aside
-      className="fixed inset-y-0 right-0 z-50 w-80 bg-white h-full shadow-xl p-6 flex flex-col gap-4 animate-slide-in-right"
-      role="dialog"
-      aria-modal="true"
-      tabIndex={-1}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold">Filter Team</h2>
-        <button
-          aria-label="Close filters"
-          className="text-gray-600 hover:text-red-600 focus:outline-none"
+                ))}
+                <button
+                  className="px-3 py-1 rounded border text-sm font-medium bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  onClick={() => setPage(page + 1)}
+                  disabled={page === totalPages}
+                  aria-label="Next page"
+                >
+                  Next
+                </button>
+              </nav>
+            )}
+          </>
+        )}
+      </div>
+    </main>
+    {drawerOpen && (
+      <>
+        {/* Overlay: covers the whole viewport, dims but allows click-through to close */}
+        <div
+          className="fixed inset-0 z-40 bg-black bg-opacity-30 transition-opacity duration-200"
+          aria-hidden="true"
           onClick={() => setDrawerOpen(false)}
-          type="button"
+        />
+        <aside
+          className="fixed inset-y-0 right-0 z-50 w-80 bg-white h-full shadow-xl p-6 flex flex-col gap-4 animate-slide-in-right"
+          role="dialog"
+          aria-modal="true"
+          tabIndex={-1}
         >
-          ×
-        </button>
-      </div>
-      <div>
-        <h3 className="font-medium mb-1">Department</h3>
-        {departmentOptions.length === 0 && <div className="text-gray-400 text-sm">No departments found</div>}
-        <div className="flex flex-col gap-1">
-          {departmentOptions.map(dep => (
-            <label key={dep} className="flex items-center gap-2 cursor-pointer text-sm">
-              <input
-                type="checkbox"
-                checked={selectedDepartments.includes(dep)}
-                onChange={e => {
-                  setSelectedDepartments(e.target.checked
-                    ? [...selectedDepartments, dep]
-                    : selectedDepartments.filter(d => d !== dep));
-                }}
-                aria-label={`Filter by department ${dep}`}
-                className="accent-blue-600"
-              />
-              <span>{dep}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-      <div>
-        <h3 className="font-medium mb-1">Role</h3>
-        {roleOptions.length === 0 && <div className="text-gray-400 text-sm">No roles found</div>}
-        <div className="flex flex-col gap-1">
-          {roleOptions.map(role => (
-            <label key={role} className="flex items-center gap-2 cursor-pointer text-sm">
-              <input
-                type="checkbox"
-                checked={selectedRoles.includes(role)}
-                onChange={e => {
-                  setSelectedRoles(e.target.checked
-                    ? [...selectedRoles, role]
-                    : selectedRoles.filter(r => r !== role));
-                }}
-                aria-label={`Filter by role ${role}`}
-                className="accent-blue-600"
-              />
-              <span>{role}</span>
-            </label>
-          ))}
-        </div>
-      </div>
-      <div className="flex gap-2 mt-4">
-        <button
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          type="button"
-          aria-label="Apply filters"
-          onClick={() => setDrawerOpen(false)}
-        >
-          Apply
-        </button>
-        <button
-          className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-          type="button"
-          aria-label="Cancel and reset filters"
-          onClick={() => {
-            setSelectedDepartments([]); setSelectedRoles([]); setDrawerOpen(false);
-          }}
-        >
-          Reset
-        </button>
-      </div>
-    </aside>
-  </>
-)}
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold">Filter Team</h2>
+            <button
+              aria-label="Close filters"
+              className="text-gray-600 hover:text-red-600 focus:outline-none"
+              onClick={() => setDrawerOpen(false)}
+              type="button"
+            >
+              ×
+            </button>
+          </div>
+          <div>
+            <h3 className="font-medium mb-1">Department</h3>
+            {departmentOptions.length === 0 && <div className="text-gray-400 text-sm">No departments found</div>}
+            <div className="flex flex-col gap-1">
+              {departmentOptions.map(dep => (
+                <label key={dep} className="flex items-center gap-2 cursor-pointer text-sm">
+                  <input
+                    type="checkbox"
+                    checked={selectedDepartments.includes(dep)}
+                    onChange={e => {
+                      setSelectedDepartments(e.target.checked
+                        ? [...selectedDepartments, dep]
+                        : selectedDepartments.filter(d => d !== dep));
+                    }}
+                    aria-label={`Filter by department ${dep}`}
+                    className="accent-blue-600"
+                  />
+                  <span>{dep}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h3 className="font-medium mb-1">Role</h3>
+            {roleOptions.length === 0 && <div className="text-gray-400 text-sm">No roles found</div>}
+            <div className="flex flex-col gap-1">
+              {roleOptions.map(role => (
+                <label key={role} className="flex items-center gap-2 cursor-pointer text-sm">
+                  <input
+                    type="checkbox"
+                    checked={selectedRoles.includes(role)}
+                    onChange={e => {
+                      setSelectedRoles(e.target.checked
+                        ? [...selectedRoles, role]
+                        : selectedRoles.filter(r => r !== role));
+                    }}
+                    aria-label={`Filter by role ${role}`}
+                    className="accent-blue-600"
+                  />
+                  <span>{role}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-2 mt-4">
+            <button
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              type="button"
+              aria-label="Apply filters"
+              onClick={() => setDrawerOpen(false)}
+            >
+              Apply
+            </button>
+            <button
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              type="button"
+              aria-label="Cancel and reset filters"
+              onClick={() => {
+                setSelectedDepartments([]); setSelectedRoles([]); setDrawerOpen(false);
+              }}
+            >
+              Reset
+            </button>
+          </div>
+        </aside>
       </>
-    );
+    )}
+  </>
+  );
 }

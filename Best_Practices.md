@@ -1,6 +1,7 @@
 # Best Practices for OKR App Development
 
 ## 1. Accessibility & Modularity
+- All interactive buttons and icons must use the `cursor-pointer` class for clear interaction feedback. Icon buttons should provide visible :hover and :focus styles for accessibility and modern UX.
 - All components and pages must be accessible and modular, following shadcn/ui and design system conventions.
 
 ## 2. Typed API Contracts

@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCollection } from "@/lib/mongodb-utils";
 
 // GET /api/departments - List all departments
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const departments = await getCollection("departments");
     const result = await departments.find({}).toArray();
