@@ -180,6 +180,7 @@ useEffect(() => {
   };
 
   const handleEditOkr = (okr: Okr) => {
+    console.log('[OKRsPage] handleEditOkr called with:', okr);
     setEditOkr(okr);
     setDialogOpen(true);
   };
@@ -219,7 +220,13 @@ useEffect(() => {
         const errData = await res.json();
         throw new Error(errData.error || "Failed to update OKR");
       }
-      setToast({ message: okr.status === "active" ? "OKR unarchived successfully!" : okr.status === "archived" ? "OKR archived successfully!" : "OKR updated successfully!", type: "success" });
+      // Only show archive/unarchive messages if status changed, else show update message
+const prevStatus = editOkr?.status;
+if (prevStatus && okr.status !== prevStatus) {
+  setToast({ message: okr.status === "active" ? "OKR unarchived successfully!" : okr.status === "archived" ? "OKR archived successfully!" : "OKR updated successfully!", type: "success" });
+} else {
+  setToast({ message: "OKR updated successfully!", type: "success" });
+}
       setDialogOpen(false);
       setEditOkr(null);
       fetchOkrs();
@@ -257,28 +264,23 @@ useEffect(() => {
   <h1 className="text-3xl font-bold">OKRs</h1>
   <Button variant="primary" className="ml-4" onClick={() => setDialogOpen(true)}>Add OKR</Button>
 </header>
-      <OkrDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onSave={async okr => {
-          console.log('[page.tsx] onSave called with:', okr);
-          // Best Practice: Only close modal and show toast after save completes
-          try {
-            if (editOkr && editOkr._id) {
-              await handleUpdateOkr({ ...editOkr, ...okr, _id: editOkr._id });
-            } else {
-              await handleAddOkr(okr);
-            }
+      {dialogOpen && (
+        <OkrDialog
+          open={dialogOpen}
+          onClose={() => {
             setDialogOpen(false);
             setEditOkr(null);
-            setToast({ message: 'OKR saved successfully!', type: 'success' });
-          } catch (err) {
-            setToast({ message: 'Failed to save OKR', type: 'error' });
-            throw err; // So dialog can re-enable Save button
-          }
-        }}
-        initialData={editOkr}
-      />
+          }}
+          onSave={okrUpdate => {
+            if (editOkr && editOkr._id) {
+              handleUpdateOkr({ ...editOkr, ...okrUpdate });
+            } else {
+              handleUpdateOkr(okrUpdate);
+            }
+          }}
+          initialData={editOkr || undefined}
+        />
+      )}
       {toast && (
         <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
       )}

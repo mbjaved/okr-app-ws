@@ -1,6 +1,6 @@
 // src/app/api/departments/route.ts
 // Best Practices: Modular, clear error handling, timeline logging
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getCollection } from "@/lib/mongodb-utils";
 
 // GET /api/departments - List all departments

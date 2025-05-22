@@ -1,0 +1,639 @@
+OKR Tracker App Development
+
+1. Project Overview
+App Name: OKR Tracker App
+Purpose: A web-based application to assist organizations in managing, tracking, and achieving Objectives and Key Results (OKRs). It provides user-friendly tools for creating, editing, assigning, and monitoring OKRs, ensuring goal alignment and performance tracking.
+Tech Stack: NodeJs Express Server(BE), Vite(FE), Netlify(Deployment), shadcn/ui components, TypeScript, MongoDB.
+
+2. Design Foundations
+2.1. Colors
+Primary Palette:
+Blue (#0071E1): Primary actions (e.g., buttons, highlights).
+Green (#53BA00): Positive trends and completed status.
+Red (#FF2538): Error or at-risk statuses.
+Secondary Palette:
+Orange (#FF7900): Warnings.
+Yellow (#FF7600): Low-severity warnings.
+Purple (#8566FF), Violet (#E167FF), Cyan (#5CE7E6): For charts and data visualizations.
+Neutral Colors:
+Black (#000C2C): Text.
+Grey (#B3BCC5): Secondary text and status indicators.
+White (#FFFFFF): Backgrounds.
+Light Grey (#FAFAFB): Notification backgrounds.
+Status Colors:
+On Track: Grey (#B3BCC5).
+Off Track: Orange (#FF7600).
+At Risk: Red (#FF2538).
+Completed: Green (#53BA00).
+2.2. Typography
+Font Family: Poppins or similar sans-serif.
+Hierarchy:
+H1: 32px, bold.
+H2: 24px, semi-bold.
+Body: 16px, regular.
+Caption: 12px, light.
+2.3. Spacing and Layout
+Grid: 8px base spacing system. Margins/Padding: Multiples of 8px for consistent layout.
+2.4. Accessibility
+WCAG 2.1 AA compliance.
+High contrast for readability.
+
+3. Theme Implementation
+3.1. Applying to shadcn/ui Components
+
+
+Accordion:
+
+
+Use neutral background colors for inactive active panels.
+Alert:
+
+
+Use Red (#FF2538) for error alerts, Green (#53BA00) for success, and Orange (#FF7900) for warnings.
+Alert Dialog:
+
+
+Use Blue (#0071E1) for the primary call-to-action buttons and Red (#FF2538) for destructive actions.
+Aspect Ratio:
+
+
+Ensure proper spacing around images or videos by applying multiples of 8px margin.
+Avatar:
+
+
+Use circular avatars with Grey (#B3BCC5) as the default background color.
+Badge:
+
+
+Use Green (#53BA00) for completion status, and Red (#FF2538) for errors or critical status.
+Breadcrumb:
+
+
+Use Blue (#0071E1) for active links and Grey (#B3BCC5) for inactive links.
+Button:
+
+
+Use Red	 (#FF2538) for primary, Outlined Blue for secondary, Blue Text Button for tertiary and Red (#FF2538) for destructive actions like delete.
+Calendar:
+
+
+Use Blue (#0071E1) for selected dates and Grey (#B3BCC5) for disabled dates.
+Card:
+
+
+Apply shadows for elevation and use neutral backgrounds. You can apply Green (#53BA00) or Red (#FF2538) for status indicators within the card.
+Chart:
+
+
+Use Purple (#8566FF), Violet (#E167FF), and Cyan (#5CE7E6) for visualizing data, ensuring readability and contrast.
+Checkbox:
+
+
+Use Blue (#0071E1) for checked state, Grey (#B3BCC5) for disabled state.
+Combobox:
+
+
+Apply Blue (#0071E1) for dropdown arrows and active items, Grey (#B3BCC5) for inactive items.
+Command:
+
+
+Use Blue (#0071E1) for selected actions and Grey (#B3BCC5) for unselected ones.
+Context Menu:
+
+
+Use Blue (#0071E1) for active selections and Grey (#B3BCC5) for options.
+Data Table:
+
+
+Use alternating row colors with Grey (#B3BCC5) and White (#FFFFFF) to make the data visually distinct.
+Date Picker:
+
+
+Use Blue (#0071E1) for selected date, and Grey (#B3BCC5) for unselected ones.
+Dialog:
+
+
+Use Blue (#0071E1) for primary and secondary actions and Red (#FF2538) for delete actions.
+Drawer:
+
+
+Use a White (#FFFFFF) background with shadows for the drawer. Use Blue (#0071E1) for primary call-to-actions.
+Dropdown Menu:
+
+
+Use Blue (#0071E1) for highlighted items and Grey (#B3BCC5) for default items.
+Form:
+
+
+Ensure all form inputs have proper spacing and alignment with 8px base grid. Use Blue (#0071E1) for active form controls.
+Hover Card:
+
+
+Use Blue (#0071E1) for text highlights on hover, with a White (#FFFFFF) background for the card.
+Input:
+
+
+Apply Blue (#0071E1) for the active state border and Grey (#B3BCC5) for disabled states.
+Input OTP:
+
+
+Use Blue (#0071E1) for the active border color and Grey (#B3BCC5) for inactive inputs.
+Label:
+
+
+Use Grey (#B3BCC5) for secondary labels and Black (#000C2C) for primary labels.
+Menubar:
+
+
+Use Blue (#0071E1) for active menu items and Grey (#B3BCC5) for inactive items.
+Pagination:
+
+
+Use Blue (#0071E1) for active page indicators and Grey (#B3BCC5) for inactive ones.
+Popover:
+
+
+Use White (#FFFFFF) for background, with a Blue (#0071E1) border for popover triggers.
+Progress:
+
+
+Use Green (#53BA00) for completed progress and Orange (#FF7900) for in-progress states.
+Radio Group:
+
+
+Use Blue (#0071E1) for active or selected options.
+Resizable:
+
+
+Ensure that resizable components use Grey (#B3BCC5) handles for visibility.
+Scroll Area:
+
+
+Use Grey (#B3BCC5) for scrollbars and maintain a White (#FFFFFF) background.
+Select:
+
+
+Apply Blue (#0071E1) for selected options and Grey (#B3BCC5) for unselected ones.
+Separator:
+
+
+Use Grey (#B3BCC5) for separators between sections.
+Sheet:
+
+
+Use White (#FFFFFF) for the background, with Blue (#0071E1) for action buttons.
+Skeleton:
+
+
+Use Light Grey (#FAFAFB) for skeleton loading states.
+Slider:
+
+
+Use Blue (#0071E1) for active slider positions.
+Switch:
+
+
+Use  Blue (#0071E1) for the active switch state, and Grey (#B3BCC5) for inactive.
+Table:
+
+
+Use alternating row colors of White (#FFFFFF) and Grey (#B3BCC5) for clarity.
+Tabs:
+
+
+Use Blue (#0071E1) for the active tab and Grey (#B3BCC5) for inactive tabs.
+Textarea:
+
+
+Use Blue (#0071E1) for active border color, and Grey (#B3BCC5) for inactive state.
+Toast:
+
+
+Use Green (#53BA00) for success toast, Red (#FF2538) for error toast, and Orange (#FF7900) for warning toast.
+Toggle:
+
+
+Use  Blue (#0071E1) for active toggle state, and Grey (#B3BCC5) for inactive.
+Toggle Group:
+
+
+Apply Blue (#0071E1) for selected toggles, and Grey (#B3BCC5) for unselected.
+
+
+4. User Flows
+4.1 Login Screen (First Screen on URL Hit)
+Page Layout
+Left Section (Intro)
+Headline: "Welcome to {OKR App} – Your Personal OKR Assistant!"
+Subtext: "Define goals, track progress, and achieve greatness. Your journey starts here!"
+Robot Mascot: "Hey there! Ready to crush some goals?" (Mascot waving with speech bubble)
+Right Section (Login Form)
+Headline: "Log in to Get Started!"
+Login Options
+Email & Password Form:
+Email input: "Enter your email"
+Password input: "Enter your password" (Eye icon for show/hide password)
+View and hide password option
+Google Login Button: "Sign in with Google"
+Button: "Log In"
+Link: "Forgot Password?"
+Sign-Up Prompt
+Subtext: "Don’t have an account yet?"
+Button: "Create One"
+
+Scenario Handling: 
+Invalid Credentials
+Step 1: User enters incorrect email or password.
+Step 2: Display an inline error message:
+Email: "Email address not found. Please check your email."
+Password: "Incorrect password. Please try again."
+Step 3: Option to reset the password or retry login.
+Recovery: Clicking “Forgot Password?” sends a reset email with instructions.
+Empty Fields
+Step 1: User clicks “Log In” without filling in required fields.
+Step 2: Display inline error messages:
+Email: “Email is required.”
+Password: “Password is required.”
+Step 3: Prompt the user to fill in missing fields.
+Google Login Failure
+Step 1: If Google login fails due to network issues or authentication problems, show a loading screen with a message: “🔄 Redirecting to Google… Please wait a moment 🚀.”
+Step 2: Provide a fallback button “Having trouble? Retry Google Login.”
+Step 3: If still failing after multiple retries, display a message: “Unable to connect to Google. Please try again later.”
+
+4.2. Sign-Up / Create Account Prompt
+Form Fields
+Full Name: "Enter your full name"
+Email: "Enter your email"
+Password: "Create a secure password" (Show checklist for password requirements)
+Confirm Password: "Confirm your password"
+CTA Button
+Primary: "Create My Account"
+Secondary: "Already have an account? Log In Here"
+
+Scenario Handling: 
+Weak Password
+Step 1: When a user enters a weak password (less than 8 characters, no number or special character), show an inline error: “Your password must be at least 8 characters long, include a number, and a special character.”
+Step 2: Allow the user to correct the password and proceed with sign-up.
+ Email Already Registered
+Step 1: If the user tries to sign up with an email already in use, show an inline message: “This email is already registered. Try logging in instead.”
+Step 2: Offer a link to the login page for the user to log in with the existing account.
+Recovery Steps: After submission, if the account creation is successful, send a confirmation email and proceed to the login screen. If the email verification fails, prompt the user to check their inbox for the verification link.
+
+
+4.3. Authentication Flow Prompts
+Email Verification Screen:
+Headline: "Verify Your Email to Get Started!"
+Subtext: "Check your inbox for a confirmation link."
+Mascot: Robot holding an envelope
+CTA: "Resend Verification Email"
+Password Reset:
+Headline: "Forgot Your Password?"
+Subtext: "No worries, we’ve got you covered!"
+CTA: "Send Reset Link"
+Confirmation: "Reset email sent! Check your inbox."
+
+
+
+4.4. Global App Bar
+Left Section: App logo
+Middle Section: Links (Home, OKRs, Team, Reports)
+Right Section: User Avatar, Notification Bell
+
+4.5. Avatar Menu Dropdown
+Options:
+View Profile
+Settings
+Logout (Confirmation modal if there are unsaved changes)
+
+4.6. Profile View Page
+Editable fields: First Name, Last Name, Designation, Department, Role (By default = employee), Reports to
+Change Password: Old Password, New Password, Confirm New Password
+Scenario Handling: 
+Profile Editing
+Step 1: Admins and managers can edit employee profiles. If any mandatory fields (Full Name, Email, Department) are left blank, show inline errors next to the respective fields.
+Step 2: When changes are made, clicking "Save Changes" should display a success message: “✔️ Profile updated successfully!”
+Recovery: If any error occurs while saving (e.g., network issue), show a toast: “⚠️ Something went wrong. Please try again.”
+Missing Profile Information:
+Step 1: A user logs in, but their profile lacks critical data (e.g., Reports to).
+Step 2: Open up a modal. Ask the user to fill who he reports to. Once filled, the  manager will have access to users OKRs
+First-Time User:
+Step 1: A new user logs in for the first time.
+Step 2: Display an onboarding screen with a welcome message and tips for using the app.
+Step 3: Provide quick-start CTAs like "Create Your First OKR"
+
+
+4.7. Settings Page
+Notification Toggles:
+Email Notifications: "Get detailed updates in your inbox" (Default: ON)
+Push Notifications: "Receive real-time alerts" (Default: ON)
+Save Button: "Save Changes"
+Toast on Success: "Your notification preferences have been updated successfully!"
+Scenario Handling:
+
+Changing Password
+Step 1: If the old password does not match or the new passwords do not match, display inline error messages:
+Old Password: “Old password is incorrect.”
+New Password: “New passwords do not match.”
+Step 2: The user can retry entering the correct password and confirm the change.
+Step 3: After a successful password change, display a toast: “Password updated successfully!”
+
+
+4.8. Notifications Page
+Design: 
+Center-aligned notifications (card format)
+Unread Notifications: Badge indicator
+Read Notifications: Regular background
+Clicking a notification opens the relevant OKR/comment
+Scenario Handling:
+No Notifications
+Step 1: If the user has no notifications, display a friendly message: “📭 No new notifications! You’re all caught up!”
+Step 2: Provide a link or button to go back to the OKRs or team screen.
+Unread Notifications
+Step 1: Show unread notifications with a red dot next to them.
+Step 2: Clicking on the notification will open the relevant OKR or comment section.
+Recovery: If there’s an error in fetching notifications, show a toast: “⚠️ Unable to load notifications. Please try again.”
+Real-Time Updates for Shared OKRs:
+Step 1: A user is working on a shared OKR, and another user makes changes.
+Step 2: Use WebSockets or long polling to notify the user in real-time: "This OKR was updated by [User]. Refresh to see changes."
+Missed Notifications:
+Step 1: A user misses a notification (e.g., due to being offline).
+Step 2: Provide a notification center where users can see a history of all notifications.
+Excessive Notifications:
+Step 1: A user receives too many notifications for minor changes (e.g., typo corrections).
+Step 2: Group similar notifications into a single summary: "3 updates to [OKR Title]."
+
+
+4.9. First-Time User Home Screen
+Welcome Message: "Welcome to {OKR App}, {Username}!"
+CTA: "Create Your First OKR"
+Best Practices Link: "Best Practices for Creating SMART Goals 💡" (Modal with examples)
+
+4.10. Habitual User Home Screen
+Welcome Message: "Welcome back, {Username}!"
+OKR Status Chart: Column chart (On Track, At Risk, Off Track, Completed)
+Your OKRs Section:
+CTA: "Create New OKR"
+Card View for OKRs: Donut chart, Number of Key Results, Last Updated, Due Date, Status tag
+Scenario Handling: 
+Overdue OKR
+Step 1: If the due date for the OKR or any key result is overdue, display a message: “Overdue by X days” in red next to the respective fields.
+Step 2: Prompt the user to update the due date or mark the OKR as completed if applicable.
+Automatic Status Changes:
+Step 1: An OKR reaches its due date but is incomplete.
+Step 2: Automatically mark the OKR as "Overdue" or "At Risk."
+Step 3: Notify the owner and assignees.
+Partial Completion:
+Step 1: An OKR has multiple key results, and only some are completed.
+Step 2: Reflect partial progress visually (e.g., progress bar or percentage completion).
+Step 3: Allow marking the OKR as partially complete.
+No Progress:
+Step 1: An OKR is created but remains untouched for a significant period.
+Step 2: Send a reminder: "You haven't made progress on [OKR Title] in 30 days. Update its status or adjust its timeline."
+
+
+4.11. Creating OKR Flow (Initial State)
+Objective Section:
+Title (Required)
+Description (Optional)
+Owner (Default: logged-in user)
+Due Date (Future date)
+Key Results Section:
+Title (Required)
+Measurement Scale (Percentage, Numeric)
+Current Value, Total Value, Owner, Due Date
+Scenario Handling:
+Missing Objective or Key Result
+Step 1: When the user tries to create or update an OKR without filling out the necessary fields (Title, Key Result), show inline validation messages:
+Objective Title: “Objective title is required.”
+Key Result Title: “Key result title is required.”
+Due Date: “Please select a valid date.”
+Step 2: Users can fill in the required fields and continue.
+Past Due Date on OKR Creation:
+When the user tries to create an OKR with a due date in the past. Allow it but automatically mark the OKR as "At Risk" and notify the creator.
+Incomplete Key Results:
+Step 1: A user creates an OKR without defining any key results.
+Step 2: Prevent saving with a validation error: "At least one key result must be added."
+Invalid Date Ranges:
+A user sets an OKR's start date after its due date.
+Prevent the action and show an error: "The start date cannot be later than the due date."
+Exceeding Character Limits:
+A user enters an overly long title or description.
+Limit input and show a counter: "Max 100 characters allowed."
+
+
+
+4.12. Removing a Key Result
+UI Flow: Trash icon with confirmation message: "Are you sure you want to delete this key result?"
+CTA: "Yes, Delete" / "Cancel"
+
+4.13. Editing an OKR Later
+Pre-filled modal with editable fields
+CTA: "Save Changes"
+Toast: "OKR updated successfully!"
+
+4.14. Copying an Existing OKR
+Action icon with “Copy OKR” option
+Modal: Pre-filled copied OKR details
+CTA: "Save"
+Toast: "New OKR created from the copied objective!"
+Scenario Handling:
+Duplicate OKRs with the same title and due date:
+Step 1: When a user tries to create an OKR with the same title and due date as an existing one.
+Step 2:Warn the user: "An OKR with this title and due date already exists."
+Step 3: Offer an option to continue or cancel.
+
+4.15. Deleting an OKR
+Delete Icon with confirmation modal
+Message: "Are you sure you want to delete this OKR?"
+CTA: "Yes, Delete" / "Cancel"
+Toast on Success: "OKR deleted successfully!"
+
+4.16. Assigning an OKR to Multiple People
+Dropdown in the Owner field for selecting multiple users
+Success Toast: "OKR assigned to [X users]"
+
+4.17. Team Screen UI
+Table Columns: Username, Joined On, Role, Department, Designation, OKRs Created, Manager
+Role-Based Access:
+Admin: Can edit profiles, change roles, manage users
+Employee: View-only access
+Manager: Edit profiles of managed employees
+
+4.18. OKRs Screen
+Card View: Donut chart, Objective Title, Key Results, Status Tag, Due Date
+Detail View: Objective Details, Key Results (Collapsible), Comments Section
+Error State: "Oops! Something went wrong while loading your OKRs."
+
+
+4.19. Error Handling for All Flows
+Network Errors (e.g., Unable to Save Data or Fetch OKRs)
+Scenario 1: If an action (e.g., saving an OKR, updating the profile) fails due to a network error, show a generic error message: “⚠️ Something went wrong. Please try again.”
+Scenario 2: Show a retry button allowing the user to attempt the action again.
+System Errors (e.g., Server Unavailable)
+Step 1: Display a message like “⚠️ The server is temporarily unavailable. Please try again later.”
+Step 2: Retry the action automatically or show a "Retry" button for the user to manually trigger the action again.
+Losing network connectivity while working.
+Allow offline edits and sync changes when the connection is restored.
+Notify the user: "You're offline. Your changes will sync once reconnected."
+API or Backend Failures:
+Step 1:The server is down or an API call fails.
+Step 2 : Show a friendly error message: "We’re experiencing issues. Please try again later."
+Step 3: Retry API calls automatically or allow manual retries.
+Session Expiry:
+Step 1: A user session expires while they're working.
+Step 2: Redirect to the login page with a message: "Your session has expired. Please log in again."
+
+
+
+4.20. User Roles and Permissions
+Admin Permissions:
+Can view all dashboards, including organization-level OKRs and team performance.
+Can create, edit, and delete any OKRs in the system.
+Can assign OKRs to any user or team.
+Can view, edit, and remove profiles of any user.
+Can change user roles (e.g., promote an Employee to Manager).
+Can access and modify global settings, such as app configurations and integrations (e.g., Slack, AI suggestions).
+Can view and export reports at the organization or team level.
+Can integrate third-party tools (e.g., Slack, email services).
+Can comment on any OKRs and approve OKRs submitted for review.
+Can archive OKRs across the organization.
+
+Manager Permissions:
+Can view dashboards for their assigned teams and team performance.
+Can create OKRs for their team members.
+Can edit and delete OKRs assigned to their team or created by their team members.
+Can assign OKRs to their team members.
+Can view and edit profiles of their team members.
+Can remove users from their team (but cannot remove them from the platform).
+Can view and export reports for their team.
+Can comment on OKRs within their team and approve team members’ OKRs.
+Can archive OKRs for their team.
+
+Employee Permissions:
+Can view their own dashboard and OKRs.
+Can create, edit, and update their own OKRs.
+Cannot delete or archive OKRs.
+Cannot assign OKRs to others.
+Cannot view or edit team or organization-level reports.
+Can comment on OKRs where they are contributors or assigned.
+Can configure their own notification preferences (e.g., email or push notifications).
+
+Special Notes:
+Comments:
+All roles can add comments to OKRs they have access to. Visibility depends on the OKR ownership or assignment.
+Approvals:
+Admins and Managers can approve OKRs submitted for review. Employees cannot approve OKRs.
+Settings:
+Only Admins can modify application settings, such as themes, localization, or integrations.
+Scenario Handling:
+Manager Assigning OKRs:
+A manager assigns an OKR to an employee who already has too many.
+Warn the manager: "[Employee Name] already has 5 active OKRs. Are you sure you want to assign another?"
+Suggest reassignment or prioritization.
+Admin Removing a User:
+An admin removes a user who owns multiple OKRs.
+Prompt the admin to reassign ownership before removal: "Reassign [User’s] OKRs to another user before removing."
+
+
+
+4.21. Additional Interactions: Notifications, Reminders, and Customizations
+Reminder Notifications for OKR Due Dates
+Step 1: Notify the user 24 hours before the OKR due date with a reminder: “⏰ Reminder: Your OKR [Objective Title] is due tomorrow.”
+Step 2: Allow users to customize notification timing (e.g., 1 day, 1 week before).
+User-Specific Customizations
+Step 1: Allow users to set their preferred notification channels (email, push).
+Step 2: Customize the OKR dashboard based on user roles (e.g., managers see team performance, employees see personal OKRs).
+
+
+4.22. Suggestions for Implementation:
+For notifications and real-time updates, use WebSockets or push notifications.
+Validate all inputs (e.g., dates, text limits) at both frontend and backend levels.
+Design fallbacks for system downtime, such as offline mode or friendly error pages.
+Regularly test edge cases to ensure a seamless user experience.
+
+
+5. Technical Requirements
+Frontend:
+Use shadcn/ui components with the custom theme.
+Backend:
+API handling with Node Js, express server
+Database:
+MongoDB for storing users, OKRs, and metadata.
+State Management:
+Redux or Context API for efficient state handling.
+Charts and Visualizations:
+Chart.js or D3.js for progress and performance graphs.
+APIs:
+User Management API (CRUD operations).
+OKR Management API (CRUD operations).
+Reporting API for generating insights.
+Notification API for updates and reminders.
+Third-party Services:
+Authentication: Using JWT token.
+Email Service: Google Console, SendGrid or Amazon SES.
+Cloud Storage: AWS S3 or Google Cloud Storage.
+Workflow:
+Set up a development environment (Node.js, MongoDB).
+Implement user authentication and authorization.
+Develop OKR CRUD operations.
+Create OKR tracking and visualization features.
+Implement reporting and analytics functionality.
+Develop collaboration features.
+Set up a notification system.
+Optimize performance and ensure responsiveness.
+Conduct thorough testing.
+Deploy to production environment.
+Testing and Validation:
+Unit testing for components and functions.
+Integration testing for API endpoints.
+End-to-end testing for user flows.
+Performance testing to ensure scalability.
+User acceptance testing with sample users.
+Error Handling and Recovery:
+Try-catch blocks for error handling.
+Log errors for debugging.
+Display user-friendly error messages.
+Automatic retry for failed API calls.
+Regular database backups and restore mechanisms.
+Security Considerations:
+HTTPS for secure communication.
+Cryptographic password hashing.
+Rate limiting to prevent brute-force attacks.
+Regular security audits and penetration tests.
+CSRF protection.
+Follow OWASP best practices.
+Performance Optimization:
+Caching strategies (Redis, local storage).
+Pagination for large data sets.
+Optimized database queries and indexes.
+Lazy loading for images and components.
+Server-side rendering for initial page loads.
+Documentation:
+Maintain API documentation.
+Include inline comments for complex logic.
+Provide user guides and FAQs.
+Document deployment and maintenance procedures.
+Keep a changelog for version control.
+Create a comprehensive ReadMe.md file.
+Development Practices:
+Follow best practices for endpoint setup.
+Make sure to setup serverless functions for Netlify deployment
+For more readability, where appropriate:
+Add comments
+Add logs statements
+Implement Page Object Model (POM).
+Use camelCase for files, variables, and methods.
+Add loading gifs in between BE calls.
+Dynamic imports for code optimization.
+Use design patterns (Factory, Adapter, etc.) where applicable.
+Follow SOLID principles.
+Enable strict type checking.
+Integrate ESLint with TypeScript.
+Implement clean folder hierarchy.
+Comment all key functions and flows for better visibility.
+
+6. Incremental Development Goals
+AI-powered OKR suggestions.
+Integration with Slack for notifications.
+Multi-language support.
+Flexibility to accommodate various OKR methodologies used by different organizations.

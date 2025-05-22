@@ -49,16 +49,18 @@ export function createOKR(params: {
   status?: OKRStatus;
   startDate?: Date;
   endDate?: Date;
+  departmentId?: ObjectId;
 }): OKR {
   const now = new Date();
   return {
     userId: params.userId,
     objective: params.objective,
-    description: params.description,
+    description: params.description || "",
     keyResults: params.keyResults,
     status: params.status || "active",
     startDate: params.startDate || now,
-    endDate: params.endDate || now,
+    endDate: params.endDate || new Date(now.getFullYear(), now.getMonth() + 3, now.getDate()), // Default to 3 months from now
+    departmentId: params.departmentId,
     createdAt: now,
     updatedAt: now,
   };

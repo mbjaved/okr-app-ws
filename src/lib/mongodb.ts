@@ -1,9 +1,17 @@
-import { MongoClient } from "mongodb";
+import { MongoClient, Db } from "mongodb";
 
 const uri = process.env.MONGODB_URI!;
-const options = {};
+// Extract database name from the URI if not explicitly set
+const dbName = process.env.MONGODB_DB || new URL(uri).pathname.replace(/^\//, '') || 'okr-app';
+console.log('🔌 Using database:', dbName);
 
-let client;
+const options = {
+  // Add any additional connection options here
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+};
+
+let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
 if (!process.env.MONGODB_URI) {
@@ -24,4 +32,19 @@ if (process.env.NODE_ENV === "development") {
   clientPromise = client.connect();
 }
 
+/**
+ * Connect to the database and return the database instance
+ */
+export async function connectToDatabase() {
+  try {
+    const client = await clientPromise;
+    const db = client.db(dbName);
+    return { client, db };
+  } catch (error) {
+    console.error('Failed to connect to MongoDB:', error);
+    throw new Error('Failed to connect to database');
+  }
+}
+
+export { clientPromise };
 export default clientPromise;
