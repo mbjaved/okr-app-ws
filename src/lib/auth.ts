@@ -2,6 +2,7 @@ import { MongoDBAdapter } from "@next-auth/mongodb-adapter"
 import { MongoClient } from "mongodb"
 import { AuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
+import GoogleProvider from "next-auth/providers/google"
 import bcrypt from 'bcryptjs'
 
 // Check for required environment variables
@@ -14,7 +15,7 @@ if (!process.env.NEXTAUTH_SECRET) {
 
 // Get database name from URI
 const dbName = new URL(process.env.MONGODB_URI).pathname.replace(/^\//, '');
-console.log('🔌 Auth using database:', dbName);
+console.log(' Auth using database:', dbName);
 
 // Create MongoDB client with connection pooling
 const client = new MongoClient(process.env.MONGODB_URI, {
@@ -25,7 +26,7 @@ const client = new MongoClient(process.env.MONGODB_URI, {
 
 // Initialize the client connection
 const clientPromise = client.connect().catch(err => {
-  console.error('❌ Failed to connect to MongoDB:', err);
+  console.error(' Failed to connect to MongoDB:', err);
   throw err;
 });
 
@@ -120,6 +121,21 @@ export const authOptions: AuthOptions = {
           return null;
         }
       }
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      profile(profile) {
+        if (!profile.email) {
+          throw new Error('Google account has no email. Please use an account with a verified email address.');
+        }
+        return {
+          id: profile.sub,
+          email: profile.email,
+          name: profile.name,
+          image: profile.picture,
+        };
+      },
     })
   ],
   callbacks: {

@@ -5,10 +5,11 @@ import { Card, CardContent } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
 import { useForm } from "react-hook-form";
+import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 
@@ -21,10 +22,13 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
+  // All hooks must be called before any return/logic!
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [redirected, setRedirected] = useState(false);
   const [error, setError] = useState("");
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const callbackUrl = searchParams.get("callbackUrl") || "/okrs";
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const {
     register,
     handleSubmit,
@@ -32,6 +36,19 @@ export default function LoginPage() {
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
   });
+  useEffect(() => {
+    if (status === "authenticated" && session && !redirected) {
+      // Check if callbackUrl is present; otherwise, go to /dashboard
+      const cbUrl = searchParams.get("callbackUrl");
+      router.replace(cbUrl || "/dashboard");
+      setRedirected(true);
+    }
+  }, [status, session, router, redirected, searchParams]);
+
+  // Show a loading spinner or blank div if loading or already authenticated (prevents hook-order errors)
+  if (status === "loading" || (status === "authenticated" && session)) {
+    return <div />;
+  }
 
   async function onSubmit(data: LoginFormValues) {
     setError("");
@@ -74,11 +91,11 @@ export default function LoginPage() {
             />
             {errors.password && <span className="text-red-500 text-xs">{errors.password.message}</span>}
             {error && <span className="text-red-500 text-xs">{error}</span>}
-            <Button type="submit" disabled={isSubmitting} className="mt-2">Log In</Button>
+            <Button type="submit" disabled={isSubmitting} className="mt-2 hover:shadow-lg cursor-pointer">Log In</Button>
           </form>
           <Button
             variant="outline"
-            className="mt-4 flex items-center gap-2"
+            className="mt-4 flex items-center gap-2 hover:shadow-lg cursor-pointer"
             onClick={() => signIn("google")}
             disabled={isSubmitting}
           >
@@ -86,8 +103,8 @@ export default function LoginPage() {
             Sign in with Google
           </Button>
           <div className="mt-4 flex flex-col gap-2">
-            <a href="#" className="text-blue-600 hover:underline text-sm">Forgot Password?</a>
-            <span className="text-sm">Don’t have an account yet? <a href="/register" className="text-blue-600 hover:underline">Create One.</a></span>
+            <Link href="/forgot-password" className="text-blue-600 hover:underline text-sm cursor-pointer">Forgot Password?</Link>
+            <span className="text-sm">Don’t have an account yet? <a href="/register" className="text-blue-600 hover:underline cursor-pointer">Create One.</a></span>
           </div>
         </CardContent>
       </Card>

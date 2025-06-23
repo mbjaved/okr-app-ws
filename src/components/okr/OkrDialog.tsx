@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { enrichOwnersWithUserData } from "../../lib/enrichOwnersWithUserData";
 import { Button } from "../ui/button";
+import { MultiSelect, MultiSelectOption } from "../ui/MultiSelect";
 
 interface Department {
   _id: string;
   name: string;
 }
-
-
 
 interface KeyResultPercent {
   krId: string;
@@ -26,34 +26,29 @@ interface KeyResultTarget {
 }
 type KeyResult = KeyResultPercent | KeyResultTarget;
 
+type OwnerData = {
+  _id: string;
+  name?: string;
+  avatarUrl?: string;
+};
+
+type OkrUpdatePayload = {
+  _id?: string;
+  objective?: string;
+  description?: string;
+  category?: "Individual" | "Team";
+  owners?: OwnerData[];
+  startDate?: string;
+  endDate?: string;
+  keyResults?: KeyResult[];
+  status?: "on_track" | "at_risk" | "off_track" | "completed";
+};
+
 interface OkrDialogProps {
   open: boolean;
   onClose: () => void;
   onSave: (okr: OkrUpdatePayload) => void;
   initialData?: OkrUpdatePayload;
-}
-
-interface OkrUpdatePayload {
-  _id?: string;
-  objective?: string;
-  description?: string;
-  departmentId?: string;
-  startDate?: string;
-  endDate?: string;
-  keyResults?: KeyResult[];
-}
-
-type KeyResult = KeyResultPercent | KeyResultTarget;
-
-
-interface OkrUpdatePayload {
-  _id?: string;
-  objective?: string;
-  description?: string;
-  departmentId?: string;
-  startDate?: string;
-  endDate?: string;
-  keyResults?: KeyResult[];
 }
 
 export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, initialData }) => {
@@ -62,54 +57,127 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [objective, setObjective] = useState("");
   const [description, setDescription] = useState("");
-  const [departmentId, setDepartmentId] = useState("");
+  const [category, setCategory] = useState<"Individual" | "Team">("Individual");
+  const [status, setStatus] = useState<"on_track" | "at_risk" | "off_track" | "completed">("on_track");
+  const [owners, setOwners] = useState<string[]>([]);
+  const [ownersData, setOwnersData] = useState<OwnerData[]>([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [keyResults, setKeyResults] = useState<KeyResult[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [deptError, setDeptError] = useState("");
+  const [users, setUsers] = useState<MultiSelectOption[]>([]);
+  const [usersError, setUsersError] = useState("");
 
   // Sync state from initialData
+  // Owners prefill: ensure owners/ownersData are set only after users are loaded and mapped
+  // Utility for deep equality (for arrays of primitives or objects)
+  function deepEqual(a: any, b: any) {
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
+
+  // Track last synced owners to prevent unnecessary resets
+  const lastSyncedOwnersRef = React.useRef<string[]>([]);
+  useEffect(() => {
+    if (!open || !initialData || users.length === 0) return;
+    // Use centralized utility for all owner mapping and enrichment
+    const mappedOwners = enrichOwnersWithUserData(
+      initialData.owners && initialData.owners.length > 0
+        ? initialData.owners
+        : initialData.owner
+          ? [initialData.owner]
+          : [],
+      users
+    );
+    const mappedOwnerIds = mappedOwners.map(o => o._id);
+    // Fallback: If no valid owners, use current user
+    if (mappedOwnerIds.length === 0) {
+      const sessionUserId = sessionStorage.getItem('okr_user_id');
+      const u = users.find(u => u.value === sessionUserId);
+      if (sessionUserId && u) {
+        mappedOwnerIds.push(sessionUserId);
+        mappedOwners.push({ _id: sessionUserId, name: u.label, avatarUrl: u.avatarUrl });
+      }
+    }
+    // Only update if owners have changed since last sync
+    if (!deepEqual(lastSyncedOwnersRef.current, mappedOwnerIds)) {
+      setOwners(mappedOwnerIds);
+      setOwnersData(mappedOwners);
+      lastSyncedOwnersRef.current = mappedOwnerIds;
+    }
+    setObjective(typeof initialData?.objective === 'string' ? initialData.objective : "");
+    setDescription(typeof initialData?.description === 'string' ? initialData.description : "");
+    if (initialData?.category && ["Individual", "Team"].includes(initialData.category)) {
+      setCategory(initialData.category);
+    }
+    if (initialData?.status && ["on_track", "at_risk", "off_track", "completed"].includes(initialData.status)) {
+      setStatus(initialData.status as "on_track" | "at_risk" | "off_track" | "completed");
+    } else {
+      setStatus("on_track");
+    }
+    // One-time debug log
+    if (open && users.length > 0) {
+      // Only log once per dialog open
+      if (!(window as any).__okr_debug_logged) {
+        (window as any).__okr_debug_logged = true;
+        console.log('[OKR DEBUG] initialData.owners:', initialData.owners);
+        console.log('[OKR DEBUG] users:', users);
+        console.log('[OKR DEBUG] mappedOwners:', mappedOwners);
+        console.log('[OKR DEBUG] mappedOwnerIds:', mappedOwnerIds);
+        console.log('[OKR DEBUG] MultiSelect value:', owners);
+      }
+    }
+    setStartDate(typeof initialData?.startDate === 'string' ? initialData.startDate.slice(0, 10) : "");
+    setEndDate(typeof initialData?.endDate === 'string' ? initialData.endDate.slice(0, 10) : "");
+    setKeyResults(Array.isArray(initialData?.keyResults) ? initialData.keyResults : []);
+    setErrors({});
+    // Reset debug flag on close
+    if (!open && (window as any).__okr_debug_logged) (window as any).__okr_debug_logged = false;
+  }, [open, initialData, users]);
+
   useEffect(() => {
     if (open) {
-      setObjective(typeof initialData?.objective === 'string' ? initialData.objective : "");
-      setDescription(typeof initialData?.description === 'string' ? initialData.description : "");
-      let deptId = "";
-      if (initialData?.departmentId) {
-        if (typeof initialData.departmentId === "object" && initialData.departmentId !== null) {
-          deptId = initialData.departmentId._id || "";
-        } else if (typeof initialData.departmentId === "string") {
-          deptId = initialData.departmentId;
-        }
-      }
-      setDepartmentId(deptId);
-      setStartDate(typeof initialData?.startDate === 'string' ? initialData.startDate.slice(0, 10) : "");
-      setEndDate(typeof initialData?.endDate === 'string' ? initialData.endDate.slice(0, 10) : "");
-      setKeyResults(Array.isArray(initialData?.keyResults) ? initialData.keyResults : []);
-      setErrors({});
+      console.debug('[OkrDialog] Owners state after open:', { owners, ownersData, users });
     }
-  }, [open, initialData]);
+  }, [open, owners, ownersData, users]);
 
-  // Fetch departments
+
+  // Fetch users for Owners MultiSelect
   useEffect(() => {
-    async function fetchDepartments() {
+    async function fetchUsers() {
       try {
-        setDeptError("");
-        const res = await fetch("/api/departments");
-        if (!res.ok) throw new Error("Failed to fetch departments");
+        setUsersError("");
+        const res = await fetch("/api/users");
+        if (!res.ok) throw new Error("Failed to fetch users");
         const data = await res.json();
-        setDepartments(data);
+        let mappedUsers = data.map((u: any) => ({ value: u._id, label: u.name, avatarUrl: u.avatarUrl }));
+        // Patch: Ensure all owners are present in users (for legacy or orphaned users)
+        if (initialData && Array.isArray(initialData.owners)) {
+          (initialData.owners as any[]).forEach(o => {
+            const ownerId = o._id || o.userId || o;
+            if (!mappedUsers.some(u => u.value === ownerId)) {
+              mappedUsers.push({
+                value: ownerId,
+                label: o.name || ownerId,
+                avatarUrl: o.avatarUrl
+              });
+            }
+          });
+        }
+        setUsers(mappedUsers);
       } catch (err: any) {
-        setDeptError("Could not load departments. Please try again later.");
+        setUsersError("Could not load users. Please try again later.");
       }
     }
-    if (open) fetchDepartments();
-  }, [open]);
+    if (open) fetchUsers();
+  }, [open, initialData]);
 
   // Validation
   function validate() {
     const newErrors: { [key: string]: string } = {};
     if (!objective.trim()) newErrors.objective = "Objective is required";
+    if (!owners || owners.length === 0) newErrors.owners = "Select at least one owner";
+    if (category === 'Individual' && owners.length > 1) {
+      newErrors.owners = "Only one owner is allowed for Individual OKRs.";
+    }
     if (!startDate) newErrors.startDate = "Start date is required";
     if (!endDate) newErrors.endDate = "End date is required";
     setErrors(newErrors);
@@ -138,30 +206,64 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
     setKeyResults(next);
   };
 
+  // Update owners state and sync with ownersData
+  const handleOwnersChange = (newOwnerIds: string[]) => {
+    // Enforce single owner if category is Individual
+    const limitedOwners = category === 'Individual' ? newOwnerIds.slice(0, 1) : newOwnerIds;
+    setOwners(limitedOwners);
+
+    // Update ownersData to match the selected IDs
+    const newOwnersData = limitedOwners.map(id => {
+      // Try to find existing data for this owner
+      const existingData = ownersData.find(o => o._id === id);
+      if (existingData) return existingData;
+
+      // Try to find user data from users list
+      const userData = users.find(u => u.value === id);
+      if (userData) {
+        return {
+          _id: id,
+          name: userData.label,
+          avatarUrl: userData.avatarUrl
+        };
+      }
+
+      // Fallback
+      return { _id: id };
+    });
+
+    setOwnersData(newOwnersData);
+  };
+
   // Form submit
-  async function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (saving) return;
+
     if (!validate()) return;
-    setSaving(true);
+    
     try {
-      const okrData = {
-        ...(initialData && initialData._id ? { _id: initialData._id } : {}),
+      setSaving(true);
+      const payload: OkrUpdatePayload = {
+        _id: initialData?._id,
         objective,
         description,
-        departmentId,
+        category,
+        status,
+        // Send full owner objects with id, name, avatarUrl
+        owners: ownersData,
         startDate,
         endDate,
         keyResults,
       };
-      await onSave(okrData);
-      setSaving(false);
+      
+      await onSave(payload);
       onClose();
-    } catch (err: any) {
+    } catch (err) {
+      console.error("Error saving OKR:", err);
+    } finally {
       setSaving(false);
-      setErrors({ form: err?.message || 'Failed to save OKR. Please try again.' });
     }
-  }
+  };
 
   if (!open) return null;
 
@@ -201,20 +303,49 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
               rows={2}
             />
           </label>
+          {/* Owners MultiSelect (replaces Department) */}
+          <div className="flex flex-col gap-1">
+            <span>Owners <span className="text-red-500">*</span></span>
+            <div className="mb-4">
+              {console.log('[OKR DEBUG] MultiSelect props:', { options: users, value: owners })}
+              <MultiSelect
+                label="Owners"
+                options={users}
+                value={owners}
+                onChange={handleOwnersChange}
+                placeholder="Select user(s)"
+                isMulti={category !== 'Individual'}
+                maxSelected={category === 'Individual' ? 1 : undefined}
+                disabled={saving}
+              />
+              {errors.owners && <div className="text-red-500 text-xs mt-1">{errors.owners}</div>}
+            </div>
+          </div>
           <label className="flex flex-col gap-1">
-            <span>Department</span>
+            <span>Category</span>
             <select
               className="border rounded px-3 py-2"
-              value={departmentId || ""}
-              onChange={e => setDepartmentId(e.target.value)}
-              style={{ color: departmentId ? '#000C2C' : '#B3BCC5' }}
+              value={category}
+              onChange={e => setCategory(e.target.value as "Individual" | "Team")}
+              style={{ color: category ? '#000C2C' : '#B3BCC5' }}
             >
-              <option value="">Select a department</option>
-              {departments.map((dept) => (
-                <option key={dept._id} value={dept._id}>{dept.name}</option>
-              ))}
+              <option value="Individual">Individual</option>
+              <option value="Team">Team</option>
             </select>
-            {deptError && <span className="text-red-500 text-xs mt-1">{deptError}</span>}
+          </label>
+          <label className="flex flex-col gap-1">
+            <span>Status</span>
+            <select
+              className="border rounded px-3 py-2"
+              value={status}
+              onChange={e => setStatus(e.target.value as "on_track" | "at_risk" | "off_track" | "completed")}
+              style={{ color: status ? '#000C2C' : '#B3BCC5' }}
+            >
+              <option value="on_track">On Track</option>
+              <option value="at_risk">At Risk</option>
+              <option value="off_track">Off Track</option>
+              <option value="completed">Completed</option>
+            </select>
           </label>
           <div className="flex gap-4">
             <label className="flex-1 flex flex-col gap-1">

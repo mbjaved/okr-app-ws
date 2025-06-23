@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, MenuItem } from "./ui/Menu";
-import { Avatar } from "./ui/avatar";
+import Avatar from "./ui/avatar";
 import { useSession, signOut } from "next-auth/react";
 
 // You can replace this with your mascot/logo as needed
@@ -113,9 +113,18 @@ const TopNav: React.FC = () => {
               Settings
             </span>
           </MenuItem>
-          <MenuItem onClick={async () => {
-            await signOut({ redirect: false });
-            router.push('/login');
+          <MenuItem onClick={() => {
+            // Prevent hook-order violations by separating signOut and navigation into distinct operations
+            // First, initiate auth state change
+            signOut({ redirect: false })
+              .then(() => {
+                // Then use a safer timeout to ensure React completes current render cycle
+                // This prevents hook-order violations during component teardown
+                setTimeout(() => {
+                  // Use replace instead of push to prevent back-navigation after logout
+                  router.replace('/login');
+                }, 50); // Slightly longer delay for more reliable cleanup
+              });
           }}>
             <span className="flex items-center gap-2">
               <svg width="18" height="18" fill="none" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 17l5-5m0 0l-5-5m5 5H9" stroke="#FF2538" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><rect x="3" y="4" width="6" height="16" rx="2" stroke="#FF2538" strokeWidth="2"/></svg>

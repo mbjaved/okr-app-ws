@@ -59,7 +59,7 @@ export const MenuItem: React.FC<{
   };
   return (
     <button
-      className={`w-full text-left px-4 py-2 hover:bg-gray-100 focus:outline-none ${className || ""}`}
+      className={`w-full text-left px-4 py-2 cursor-pointer hover:bg-gray-100 focus:outline-none ${className || ""}`}
       onClick={handleClick}
       type="button"
     >

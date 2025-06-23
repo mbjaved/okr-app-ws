@@ -1,5 +1,114 @@
 # Development Timeline & Task Log
 
+## 2025-06-20 (Session 4)
+
+### OKRs Page.tsx Audit & Cleanup
+- Imports reordered per Best_Practices.md (React, third-party, local components).
+- Removed unreachable/stray code blocks; ensured only one export default.
+- All hooks, state, and handlers now reside inside the OKRsPage component.
+- Added explicit comments referencing Best_Practices.md and Design_prompts for traceability.
+- This step establishes a clean, maintainable baseline for further accessibility and UX improvements.
+- Logged in parallel with implementation as required by process.
+
+
+### OKRs Page UI/UX Improvements
+- **Tab bar redesign:** Updated to match dashboard style with modern typography, subtle shadow, increased spacing, and robust focus indicators. (Best_Practices.md: accessibility, modularity, robust feedback, design alignment)
+- **Page heading added:** Distinct, accessible heading "OKRs" above the tab bar for visual clarity and screen reader support.
+- **Time spent:** ~30min
+- **Design references:** Dashboard tab bar, Design_prompts
+- **Notes:** All changes logged inline in page.tsx with timeline comments.
+
+### Error Handling Audit: Delete & Duplicate OKR Actions
+- **Summary:**
+  - Audited and improved error handling for both delete (soft/hard) and duplicate OKR actions in `page.tsx`.
+  - All API errors now show clear, actionable, and user-friendly messages (fallbacks for network/parse errors, backend messages shown if present).
+  - UI feedback is robust: confirmation modals and toasts now always display meaningful results for both success and failure.
+  - Debug logging and error fallback logic added to handle unexpected server responses.
+- **Best Practices:**
+  - Meaningful error messages for every request (Best_Practices.md)
+  - Robust UI feedback, debug logging, timeline logging, design prompt reference
+- **Design References:**
+  - Error/empty state messaging in Design_prompts/3.txt
+- **Time Tracked:** ~20min
+- **Logged in parallel with implementation per process requirements.**
+
+## 2025-06-17 (Session 3)
+
+### UX & Functional Enhancements: Scrollable Grid, Pagination, JSX/TSX Fixes
+- **Summary:**
+  - Implemented scrollable grid for OKRs in both All and Archived tabs (max-height, vertical scroll, accessible, responsive)
+  - Added robust, accessible pagination (8 OKRs per page) below each grid
+  - Fixed all JSX/TSX syntax errors: properly closed all tags, ensured Menu components use correct trigger prop and children
+  - Resolved MenuProps and closing tag lint errors for both tabs
+  - Strictly followed Best_Practices.md (accessibility, modularity, debug logging, robust feedback, timeline logging, design prompt reference)
+  - Referenced Design_Prompts for layout and interaction
+- **Steps:**
+  - Implemented scrollable grid for OKRs in both All and Archived tabs
+  - Added robust, accessible pagination below each grid
+  - Fixed all JSX/TSX syntax errors and lint errors for both tabs
+  - Manually tested all flows and updated DEVELOPMENT_TIMELINE.md immediately after implementation
+- **Best Practices:**
+  - Accessibility & modularity
+  - Typed API contracts
+  - Minimal, robust API payloads
+  - Debug logging & robust UI feedback
+  - Timeline logging in parallel with implementation
+  - Design prompt reference in each step
+  - Meaningful error messages
+- **Time Tracked:** ~1.5 hours
+
+
+## 2025-05-23 (Session 2)
+
+### UX & Functional Enhancements: OKR Page Controls, Archived OKR Delete, Best Practices
+- **Summary:**
+  - Refined the OKRs page layout for better UX: grouped search and sort controls in a modern, card-like container.
+  - Improved Radix UI tab styling and placement for clarity and accessibility.
+  - Ensured OKR cards and menus follow design prompt (no nav arrows, correct subtext, status, and actions).
+  - Implemented robust "Delete" functionality for archived OKRs, including accessible confirmation dialog, API DELETE, toast feedback, and timeline logging.
+  - All changes strictly followed Best_Practices.md (modularity, robust UI feedback, debug logging, error handling, timeline logging, design prompt reference, accessibility).
+- **Steps:**
+  - Refactored search/sort controls into a visually cohesive, responsive flex container.
+  - Enhanced tab and card layouts for design consistency.
+  - Ensured all interactive elements use Radix UI or accessible equivalents.
+  - Wired up "Delete" menu action for archived OKRs, with confirmation and feedback.
+  - Manually tested all flows and updated DEVELOPMENT_TIMELINE.md immediately after implementation.
+- **Best Practices:**
+  - Accessibility & modularity
+  - Typed API contracts
+  - Minimal, robust API payloads
+  - Debug logging & robust UI feedback
+  - Timeline logging in parallel with implementation
+  - Design prompt reference in each step
+  - Meaningful error messages
+- **Time Tracked:** ~1.5 hours
+
+
+## 2025-05-23
+
+### Bugfix & Enhancement: OKR Archiving, Toast Feedback, JSX Error Fix
+- **Summary:**
+  - Fixed JSX parse error in OKRs page by properly closing all blocks and restoring valid component structure.
+  - Resolved issues with OKR archiving logic and ensured archived OKRs display correctly in the UI.
+  - Improved toast message feedback: toast now auto-dismisses after 5 seconds for better UX.
+  - All changes strictly followed Best_Practices.md (typed API contracts, robust payloads, debug logging, UI feedback, timeline logging, design prompt reference, accessibility, error messages).
+- **Steps:**
+  - Debugged and corrected JSX structure in `page.tsx` for the OKRs page (main return block, OkrDialog, toast).
+  - Verified and normalized departmentId typing in OKR update logic.
+  - Ensured toast messages are robust, accessible, and auto-dismissed.
+  - Manually tested archiving/unarchiving flows and UI feedback.
+  - Updated DEVELOPMENT_TIMELINE.md immediately after implementation.
+- **Best Practices:**
+  - Accessibility & modularity
+  - Typed API contracts
+  - Minimal, robust API payloads
+  - Debug logging & robust UI feedback
+  - Timeline logging in parallel with implementation
+  - Design prompt reference in each step
+  - Meaningful error messages
+- **Time Tracked:** ~30 minutes
+
+
 ## 2025-05-21
 
 ### Enhancement & Bugfix: Dashboard Recent Activity Avatars + Lint/Type Cleanup
@@ -271,14 +380,11 @@
 
 ### Refactor: Profile Page UI/UX Modernization
 - **Summary:**
-  - Refactored Profile Page layout for a modern, centered, and accessible look as per design prompts 1-3.
-  - Grouped avatar, name, and email in a flex row with overlay upload controls.
-  - All fields and actions are visually grouped and aligned for clarity.
-  - Added `max-w-2xl mx-auto p-6 bg-white rounded shadow` container for readable, focused content.
-  - Ensured robust UI feedback for avatar upload and errors.
-  - Fixed Avatar `size` prop type error (now uses `size="lg"`).
-- **Best Practices:**
-  - Accessibility, modularity, robust UI feedback, timeline logging, design prompt reference, typed API contracts, meaningful error messages, authentication wall.
+  - Refactored Profile Page layout## 2025-06-20
+- OKRs tab bar restyled and page heading added aligning with dashboard design.
+- OkrCard redesign: progress ring, avatars, badges, unified menu.
+- Filter logic unified across all tabs; category filter removed.
+- Filtering now works for Archived and Deleted tabs.
 - **Time Tracked:** ~20min
 
 ## 2025-05-13
@@ -513,9 +619,4 @@
 
 - **UX Improvement:** Reduced filter drawer overlay opacity from 30% to 10% for a less intrusive, more Radix UI-consistent experience (per design review and user feedback).
   - Began implementation of filtering with a side drawer and dismissible chips, per Design_Prompts/3.txt.
-  - Side drawer will provide checkboxes for department and role; selected filters will be shown as chips above the table and can be dismissed to clear filters.
-  - Filtering logic is modular, accessible, and defensive. All UI components use Radix UI/shadcn/ui where possible.
-  - Timeline logging and per-task time tracking in progress for this step, as required by project process rules.
-  - **Time taken:** [in progress]
-
 (Continue to log all future tasks, debugging, and decisions here)
