@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Avatar } from "@/components/ui/avatar";
+import Avatar from "@/components/ui/avatar";
 
 // Best Practice: Typed user profile
 interface UserProfile {

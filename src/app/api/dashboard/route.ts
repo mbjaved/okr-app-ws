@@ -90,13 +90,42 @@ export async function GET() {
 
     // Get user's OKRs (match /api/okrs logic)
     console.log('🔍 Fetching OKRs for user:', user._id);
-    let okrs: any[] = [];
+    interface KeyResult {
+  title: string;
+  type: "percent" | "target";
+  progress?: number;
+  current?: number;
+  target?: number;
+  unit?: string;
+}
+
+interface TeamMember {
+  userId: string | ObjectId;
+  name?: string;
+  avatarUrl?: string;
+  [key: string]: unknown;
+}
+
+interface Okr {
+  _id: string | ObjectId;
+  userId: string | ObjectId;
+  objective: string;
+  description?: string;
+  keyResults?: KeyResult[];
+  departmentId?: string;
+  status: string;
+  startDate?: string;
+  endDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+let okrs: Okr[] = [];
     try {
-      const okrsQuery: any = { userId: user._id };
+      const okrsQuery: { userId: string | ObjectId; status?: string | Record<string, unknown> } = { userId: user._id };
       // If you want to support departmentId, you can extend this logic here
       okrsQuery.status = { $ne: 'archived' };
       console.log('🔍 OKRs query (dashboard, matching /api/okrs):', JSON.stringify(okrsQuery, null, 2));
-      okrs = await db.collection('okrs')
+      okrs = await db.collection<Okr>('okrs')
         .find(okrsQuery)
         .sort({ dueDate: 1 })
         .toArray(); // Do NOT limit for stats
@@ -107,13 +136,29 @@ export async function GET() {
     }
 
     // Calculate OKR stats
-    const okrStats = {
-      total: okrs.length,
-      onTrack: okrs.filter(okr => okr.status === 'on_track').length,
-      atRisk: okrs.filter(okr => okr.status === 'at_risk').length,
-      offTrack: okrs.filter(okr => okr.status === 'off_track').length,
-      completed: okrs.filter(okr => okr.status === 'completed').length
-    };
+    const okrsWithComputedStatus = okrs.map(okr => {
+  // If keyResults exist and all are 100% (percent) or current >= target (target), treat as completed
+  if (okr.keyResults && okr.keyResults.length > 0) {
+    const allDone = okr.keyResults.every(kr => {
+      if (kr.type === 'percent') {
+        return (typeof kr.progress === 'number' && kr.progress >= 100);
+      } else if (kr.type === 'target') {
+        return (typeof kr.current === 'number' && typeof kr.target === 'number' && kr.current >= kr.target);
+      }
+      return false;
+    });
+    return { ...okr, computedStatus: allDone ? 'completed' : okr.status };
+  }
+  return { ...okr, computedStatus: okr.status };
+});
+
+const okrStats = {
+  total: okrsWithComputedStatus.length,
+  onTrack: okrsWithComputedStatus.filter(okr => okr.computedStatus === 'on_track').length,
+  atRisk: okrsWithComputedStatus.filter(okr => okr.computedStatus === 'at_risk').length,
+  offTrack: okrsWithComputedStatus.filter(okr => okr.computedStatus === 'off_track').length,
+  completed: okrsWithComputedStatus.filter(okr => okr.computedStatus === 'completed').length
+};
     
     console.log('📊 OKR Stats:', okrStats);
 
@@ -163,7 +208,7 @@ export async function GET() {
         dueDate: formatDate(due),
         createdAt: formatDate(deadline.createdAt),
         updatedAt: formatDate(deadline.updatedAt),
-        teamMembers: deadline.teamMembers?.map((member: any) => ({
+        teamMembers: deadline.teamMembers?.map((member: TeamMember) => ({
           ...member,
           userId: member.userId?.toString()
         })) || []

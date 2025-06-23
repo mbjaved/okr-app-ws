@@ -28,11 +28,12 @@ export interface KeyResult {
 // OKR Schema
 export interface OKR {
   _id?: ObjectId;
-  userId: ObjectId;         // Owner/creator of the OKR
+  userId: ObjectId;         // Creator of the OKR
   objective: string;
   description?: string;
   keyResults: KeyResult[];
-  departmentId?: ObjectId; // Optional: Reference to the department for this OKR
+  category: "Individual" | "Team";
+  owners: string[]; // User IDs assigned to this OKR (at least one)
   status: OKRStatus;
   startDate: Date;
   endDate: Date;
@@ -46,10 +47,11 @@ export function createOKR(params: {
   objective: string;
   keyResults: KeyResult[];
   description?: string;
+  category: "Individual" | "Team";
+  owners: string[];
   status?: OKRStatus;
   startDate?: Date;
   endDate?: Date;
-  departmentId?: ObjectId;
 }): OKR {
   const now = new Date();
   return {
@@ -57,11 +59,13 @@ export function createOKR(params: {
     objective: params.objective,
     description: params.description || "",
     keyResults: params.keyResults,
+    category: params.category,
+    owners: params.owners,
     status: params.status || "active",
     startDate: params.startDate || now,
     endDate: params.endDate || new Date(now.getFullYear(), now.getMonth() + 3, now.getDate()), // Default to 3 months from now
-    departmentId: params.departmentId,
     createdAt: now,
     updatedAt: now,
   };
+
 }

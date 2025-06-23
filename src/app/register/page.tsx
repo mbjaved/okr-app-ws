@@ -8,6 +8,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Toast from "../../components/ui/Toast";
 import Image from "next/image";
 
 
@@ -27,6 +29,10 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const [toastOpen, setToastOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error" | "info">("success");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const {
@@ -55,8 +61,13 @@ export default function RegisterPage() {
       if (!res.ok) {
         setError(result.error || "Registration failed");
       } else {
-        setSuccess("Account created! You can now log in.");
+        setToastMsg("Registration successful! Please log in.");
+        setToastType("success");
+        setToastOpen(true);
         reset();
+        setTimeout(() => {
+          router.replace("/login");
+        }, 1200);
       }
     } catch (e) {
       setError("Server error. Please try again later.");
@@ -109,14 +120,22 @@ export default function RegisterPage() {
             />
             {errors.confirmPassword && <span className="text-red-500 text-xs">{errors.confirmPassword.message}</span>}
             {error && <span className="text-red-500 text-xs">{error}</span>}
-            {success && <span className="text-green-600 text-xs">{success}</span>}
-            <Button type="submit" disabled={isSubmitting} className="mt-2">Create My Account</Button>
+
+            <Button type="submit" disabled={isSubmitting} className="mt-2 hover:shadow-lg cursor-pointer">Create My Account</Button>
           </form>
           <div className="mt-4 flex flex-col gap-2">
-            <span className="text-sm">Already have an account? <a href="/login" className="text-blue-600 hover:underline">Log in.</a></span>
+            <span className="text-sm">Already have an account? <a href="/login" className="text-blue-600 hover:underline cursor-pointer">Log in.</a></span>
           </div>
         </CardContent>
       </Card>
+      {/* Toast Notification */}
+      <Toast
+        message={toastMsg}
+        type={toastType}
+        open={toastOpen}
+        onClose={() => setToastOpen(false)}
+        duration={2200}
+      />
     </div>
   );
 }

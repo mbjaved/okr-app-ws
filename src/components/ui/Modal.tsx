@@ -17,7 +17,7 @@ export const Modal: React.FC<ModalProps> = ({ open, title, children, onClose, ac
         <div className="mb-4">{children}</div>
         <div className="flex justify-end gap-2">{actions}</div>
         <button
-          className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-xl"
+          className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-xl cursor-pointer hover:bg-gray-100 rounded transition-colors"
           aria-label="Close"
           onClick={onClose}
         >

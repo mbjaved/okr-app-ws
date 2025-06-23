@@ -8,7 +8,7 @@ import { useSession } from "next-auth/react";
 import useSWR from "swr";
 
 import { Table, TableHead, TableRow, TableCell, TableBody } from "@/components/ui/table";
-import { Avatar } from "@/components/ui/avatar";
+import Avatar from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
@@ -252,13 +252,13 @@ export default function TeamPage() {
                   <TableRow key={user._id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Avatar src={user.avatarUrl} username={user.username} alt={user.username} size="sm" />
+                        <Avatar user={user} alt={user.name || user.username} size="sm" />
                         <Link
                           href={user._id === sessionUserId ? "/settings/profile" : `/profile/${encodeURIComponent(user.username)}`}
                           className="text-[#0071E1] hover:underline font-medium focus:outline-none"
-                          aria-label={`View profile for ${user.username}`}
+                          aria-label={`View profile for ${user.name || user.username}`}
                         >
-                          {user.username}
+                          {user.name || user.username}
                         </Link>
                       </div>
                     </TableCell>
