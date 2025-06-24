@@ -2,6 +2,25 @@
 
 ## 2025-06-20 (Session 4)
 
+### Feature: Owners Filter for OKRs Page
+- **Summary:**
+  - Implemented Owners multi-select filter in the OKRs page filter panel, using deduped user options and robust state management.
+  - Updated filtering logic for All, Archived, and Deleted tabs to support filtering by selected owner IDs (multi-owner compatible).
+  - Owners filter included in badge count and reset logic; edge cases (legacy OKRs, filter reset) handled.
+  - Follows Best_Practices.md: modularity, robust UI feedback, typed contracts, timeline logging, and accessibility.
+  - Referenced Design_prompts for consistent UI/UX and filter panel layout.
+  - Manual and code review confirmed correct filter behavior and integration.
+- **Best Practices:**
+  - Modular, accessible component structure
+  - Timeline logging in parallel with implementation
+  - Robust, user-friendly UI feedback
+  - Defensive filter logic for legacy/edge-case data
+- **Design References:**
+  - Filter panel and badge in Design_prompts/3.txt
+- **Time Tracked:** ~25min
+- **Logged in parallel with implementation per process requirements.**
+
+
 ### OKRs Page.tsx Audit & Cleanup
 - Imports reordered per Best_Practices.md (React, third-party, local components).
 - Removed unreachable/stray code blocks; ensured only one export default.

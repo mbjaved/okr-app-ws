@@ -114,7 +114,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
         type="button"
         ref={buttonRef}
         className={cn(
-          "w-full border rounded px-3 py-2 flex items-center justify-between gap-2 bg-white focus:ring-2 focus:ring-primary focus:outline-none",
+          "w-full border rounded px-3 py-2 flex items-center justify-between gap-2 bg-white transition-colors duration-150 hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer focus:outline-none",
           disabled && "opacity-50 cursor-not-allowed"
         )}
         aria-haspopup="listbox"

@@ -111,8 +111,9 @@ export default function OKRsPage() {
   const [filterDepartment, setFilterDepartment] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterQuarter, setFilterQuarter] = useState("");
-  const [filterAssignedTo, setFilterAssignedTo] = useState("");
+  
   const [filterCreatedBy, setFilterCreatedBy] = useState<string[]>([]);
+const [filterOwners, setFilterOwners] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState("");
   const [okrs, setOkrs] = useState<Okr[]>([]);
   const [archivedOkrs, setArchivedOkrs] = useState<Okr[]>([]);
@@ -134,9 +135,9 @@ const activeFiltersCount = [
   filterDepartment,
   filterCategory,
   filterQuarter,
-  filterAssignedTo,
   filterStatus,
-  ...(filterCreatedBy && filterCreatedBy.length > 0 ? [1] : [])
+  ...(filterCreatedBy && filterCreatedBy.length > 0 ? [1] : []),
+  ...(filterOwners && filterOwners.length > 0 ? [1] : [])
 ].filter(Boolean).length;
   const filterPanelRef = useRef<HTMLDivElement>(null);
   const [sortBy, setSortBy] = useState("recent");
@@ -415,10 +416,15 @@ const activeFiltersCount = [
     // Department
     if (filterDepartment && okr.department !== filterDepartment) return false;
     // Assigned to (owner or keyResults.assignedTo)
-    if (filterAssignedTo && !(okr.owner?.toLowerCase().includes(filterAssignedTo.toLowerCase()) || okr.keyResults?.some((kr: any) => kr.assignedTo?.some((a: string) => a.toLowerCase().includes(filterAssignedTo.toLowerCase()))))) return false;
+    
     // Created by
     // Always treat filterCreatedBy as array of user IDs
-if (Array.isArray(filterCreatedBy) && filterCreatedBy.length > 0 && (!okr.createdBy || !filterCreatedBy.includes(okr.createdBy))) return false;
+    if (Array.isArray(filterCreatedBy) && filterCreatedBy.length > 0 && (!okr.createdBy || !filterCreatedBy.includes(okr.createdBy))) return false;
+    // Owners filter (multi-select, supports multiple owners per OKR)
+    if (Array.isArray(filterOwners) && filterOwners.length > 0) {
+      const okrOwnerIds = (okr.owners || []).map((o: any) => o._id || o.userId || o.id).filter(Boolean);
+      if (!okrOwnerIds.some((id: string) => filterOwners.includes(id))) return false;
+    }
     // Status (normalize and compare case-insensitive)
     if (filterStatus && okr.status && okr.status.toLowerCase().trim() !== filterStatus.toLowerCase().trim()) return false;
     return true;
@@ -495,8 +501,8 @@ useEffect(() => {
       (!filterDate || (normalizedEndDate && normalizedEndDate === filterDate)) &&
       (!filterCategory || okr.category === filterCategory) &&
       (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
-      (!filterAssignedTo || (okr.owner && okr.owner.toLowerCase().includes(filterAssignedTo.toLowerCase()))) &&
       (filterCreatedBy.length === 0 || (okr.createdBy && filterCreatedBy.includes(okr.createdBy))) &&
+      (filterOwners.length === 0 || ((okr.owners || []).map((o: any) => o._id || o.userId || o.id).some((id: string) => filterOwners.includes(id)))) &&
       (!filterStatus || (okr.status && okr.status.toLowerCase().trim() === filterStatus.toLowerCase().trim()))
     );
   });
@@ -508,8 +514,8 @@ useEffect(() => {
     (!filterDate || (normalizedEndDate && normalizedEndDate === filterDate)) &&
     (!filterCategory || okr.category === filterCategory) &&
     (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
-    (!filterAssignedTo || (okr.owner && okr.owner.toLowerCase().includes(filterAssignedTo.toLowerCase()))) &&
     (filterCreatedBy.length === 0 || (okr.createdBy && filterCreatedBy.includes(okr.createdBy))) &&
+    (filterOwners.length === 0 || ((okr.owners || []).map((o: any) => o._id || o.userId || o.id).some((id: string) => filterOwners.includes(id)))) &&
     (!filterStatus || (okr.status && okr.status.toLowerCase().trim() === filterStatus.toLowerCase().trim()))
   );
 });
@@ -569,6 +575,18 @@ useEffect(() => {
           onKeyDown={e => { if (e.key === 'Escape') setFiltersOpen(false); }}
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div>
+    <MultiSelect
+      options={dedupedUserOptions(allUsers)}
+      value={Array.isArray(filterOwners) ? filterOwners : []}
+      onChange={vals => setFilterOwners(Array.isArray(vals) ? vals : [])}
+      placeholder="Select owners"
+      label="Owners"
+      isMulti={true}
+      className="w-full cursor-pointer"
+      aria-label="Filter by owners"
+    />
+  </div>
             <div>
               <label htmlFor="filter-date" className="block text-sm font-medium mb-1">Due Date</label>
               <DatePickerFilter value={filterDate} onChange={setFilterDate} />
@@ -577,7 +595,7 @@ useEffect(() => {
               <label htmlFor="filter-department" className="block text-sm font-medium mb-1">Department</label>
               <select
                 id="filter-department"
-                className="w-full rounded border px-3 py-2 transition-colors duration-150 hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
+                className="w-full rounded border px-3 py-2 pr-10 transition-colors duration-150 hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer appearance-none bg-[url('data:image/svg+xml;utf8,<svg fill=\'none\' stroke=\'%234B5563\' stroke-width=\'2\' viewBox=\'0 0 24 24\' xmlns=\'http://www.w3.org/2000/svg\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' d=\'M19 9l-7 7-7-7\'></path></svg>')] bg-no-repeat bg-[right_0.75rem_center] bg-[length:1.25em_1.25em]"
                 value={filterDepartment}
                 onChange={e => setFilterDepartment(e.target.value)}
                 aria-label="Filter by department"
@@ -593,7 +611,7 @@ useEffect(() => {
               <label htmlFor="filter-category" className="block text-sm font-medium mb-1">Category</label>
               <select
                 id="filter-category"
-                className="w-full rounded border px-3 py-2 transition-colors duration-150 hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
+                className="w-full rounded border px-3 py-2 pr-10 transition-colors duration-150 hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer appearance-none bg-[url('data:image/svg+xml;utf8,<svg fill=\'none\' stroke=\'%234B5563\' stroke-width=\'2\' viewBox=\'0 0 24 24\' xmlns=\'http://www.w3.org/2000/svg\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' d=\'M19 9l-7 7-7-7\'></path></svg>')] bg-no-repeat bg-[right_0.75rem_center] bg-[length:1.25em_1.25em]"
                 value={filterCategory}
                 onChange={e => setFilterCategory(e.target.value)}
                 aria-label="Filter by category"
@@ -608,7 +626,7 @@ useEffect(() => {
               <label htmlFor="filter-quarter" className="block text-sm font-medium mb-1">Quarter</label>
               <select
                 id="filter-quarter"
-                className="w-full rounded border px-3 py-2 transition-colors duration-150 hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
+                className="w-full rounded border px-3 py-2 pr-10 transition-colors duration-150 hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer appearance-none bg-[url('data:image/svg+xml;utf8,<svg fill=\'none\' stroke=\'%234B5563\' stroke-width=\'2\' viewBox=\'0 0 24 24\' xmlns=\'http://www.w3.org/2000/svg\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' d=\'M19 9l-7 7-7-7\'></path></svg>')] bg-no-repeat bg-[right_0.75rem_center] bg-[length:1.25em_1.25em]"
                 value={filterQuarter}
                 onChange={e => setFilterQuarter(e.target.value)}
                 aria-label="Filter by quarter"
@@ -621,18 +639,6 @@ useEffect(() => {
               </select>
             </div>
             <div>
-              <label htmlFor="filter-assigned" className="block text-sm font-medium mb-1">Assigned to</label>
-              <input
-                id="filter-assigned"
-                type="text"
-                className="w-full rounded border px-3 py-2 transition-colors duration-150 hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
-                placeholder="Assigned to"
-                value={filterAssignedTo}
-                onChange={e => setFilterAssignedTo(e.target.value)}
-                aria-label="Filter by assignee"
-              />
-            </div>
-            <div>
               <MultiSelect
                 options={dedupedUserOptions(allUsers)}
                 value={Array.isArray(filterCreatedBy) ? filterCreatedBy : []}
@@ -640,7 +646,7 @@ useEffect(() => {
                 placeholder="Select creators"
                 label="Created by"
                 isMulti={true}
-                className="w-full"
+                className="w-full cursor-pointer"
                 aria-label="Filter by creator"
               />
             </div>
@@ -649,7 +655,7 @@ useEffect(() => {
     <label htmlFor="filter-status" className="block text-sm font-medium mb-1">Status</label>
     <select
       id="filter-status"
-      className="w-full rounded border px-3 py-2 transition-colors duration-150 hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
+      className="w-full rounded border px-3 py-2 pr-10 transition-colors duration-150 hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer appearance-none bg-[url('data:image/svg+xml;utf8,<svg fill=\'none\' stroke=\'%234B5563\' stroke-width=\'2\' viewBox=\'0 0 24 24\' xmlns=\'http://www.w3.org/2000/svg\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' d=\'M19 9l-7 7-7-7\'></path></svg>')] bg-no-repeat bg-[right_0.75rem_center] bg-[length:1.25em_1.25em]"
       value={filterStatus}
       onChange={e => setFilterStatus(e.target.value)}
       aria-label="Filter by status"
@@ -670,27 +676,28 @@ useEffect(() => {
           </div>
           <div className="flex justify-end gap-2 mt-2">
             <button
-              type="button"
-              className="rounded px-4 py-2 bg-gray-100 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 focus-visible:ring-2 focus-visible:ring-blue-400 text-gray-700 transition-colors duration-150 border border-gray-200"
-              onClick={() => setFiltersOpen(false)}
-            >
-              Apply
-            </button>
-            <button
-              type="button"
-              className="rounded px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-400 transition-colors duration-150 border border-blue-600"
-              onClick={() => {
-                setFilterDate("");
-                setFilterDepartment("");
-                setFilterCategory("");
-                setFilterQuarter("");
-                setFilterAssignedTo("");
-                setFilterCreatedBy([]);
-                setFilterStatus("");
-              }}
-            >
-              Reset Filters
-            </button>
+               type="button"
+               className="rounded px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-400 transition-colors duration-150 border border-blue-600 cursor-pointer"
+               onClick={() => setFiltersOpen(false)}
+             >
+               Apply
+             </button>
+             <button
+               type="button"
+               className="rounded px-4 py-2 bg-gray-100 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 focus-visible:ring-2 focus-visible:ring-blue-400 text-gray-700 transition-colors duration-150 border border-gray-200 cursor-pointer"
+               onClick={() => {
+                 setFilterDate("");
+                 setFilterDepartment("");
+                 setFilterCategory("");
+                 setFilterQuarter("");
+                 
+                 setFilterCreatedBy([]);
+                 setFilterOwners([]);
+                 setFilterStatus("");
+               }}
+             >
+               Reset Filters
+             </button>
           </div>
         </div>
       )}
