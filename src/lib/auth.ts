@@ -187,7 +187,7 @@ export const authOptions: AuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: true,
-        domain: process.env.NODE_ENV === 'production' ? '.yourdomain.com' : undefined
+
       }
     }
   } : undefined
