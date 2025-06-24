@@ -1,0 +1,624 @@
+Prompt for OKR App Development
+
+Project Overview: 
+The OKR Tracker App is a web-based application designed to help organizations manage, track, and achieve their Objectives and Key Results (OKRs). It provides a user-friendly interface for creating, editing, assigning, and monitoring OKRs across the organization, facilitating goal alignment and performance tracking.
+Task Description:
+Develop a comprehensive OKR Tracker App with user management, OKR creation and tracking, reporting capabilities, and collaboration features. The app should be scalable, secure, and user-friendly, catering to organizations of various sizes and departments e.g. Frontend, QA, etc.
+Product Requirements:
+UI Foundation Requirements (Use the following to create a UI theme for the shadcn/ui components):
+Typography
+Use a clear, readable sans-serif font for the interface (e.g., Poppins).
+Headings should have distinct sizes (H1 for main headers, H2 for subheaders) and weight hierarchy for visual clarity.
+Color
+Primary color: Blue (#0071e1) for actions like buttons and highlights.
+Secondary color: Green (#53BA00) for positive trends, Red (#FF2538),  Orange (#FF7900) and Yellow (#FF7600) for negative trends based on severity, Blue (#4FA9FF) for neutral trends. Other colors if needed for the charts Purple (#8566FF), violet (#E167FF) and cyan (#5CE7E6).
+Neutral colors for text and backgrounds. For typography, Black (#000C2C) and Grey (#000C2C). For normal background, use white (#FFF) for unread notifications use this light grey (#FAFAFB). Ensure WCAG-compliant contrast ratios.
+For statuses, On track (#B3BCC5) , Off track (#FF7600), At risk (#FF2538) and Completed (#53BA00).
+Spacing
+Maintain consistent padding and margin (8px base grid).
+Use white space to separate sections for readability without overcrowding.
+Elevation
+Create three-dimensional space by placing components at different elevations to increase the visual prominence of certain elements. Elevation is described in terms of levels. Elevation levels are labeled in t-shirt sizes, according to their distance above the UI’s surface. The distance is measured along the z-axis in density-independent pixels (dp). (e.g. S=0, M=4, L=8, XL=16 and XXL=24)
+Icons and Imagery
+Use intuitive icon buttons to represent edit (e.g., pencil), delete (e.g., bin) and view details (e.g., eye).
+Use emojis with messaging (e.g. Welcome back!, Descriptions, etc)
+Use a friendly mascot (e.g., a quirky robot 🤖 waving to the user).
+Include data visualizations (e.g., bar graphs, pie charts) for a clear representation of trends.
+Components
+Buttons: Primary (solid blue), secondary (outlined blue) and tertiary (text blue). For destructive actions (e.g. delete) use Red (#FF2538) buttons.
+Navigation: Include a floating app bar on top for quick access to core features (e.g. Home, OKR , Teams and Reports).
+Table: Display a list of team members with search (By name, designation) , filters (By department and role), and sorting (by alphabetical order and last added/joined) options. Show no data state, if no results found by search and filters. Show filter option on the side drawer; once the user applies a certain filter, close the side-drawer and show selected filters as dismissible chips. Add pagination at the end of the table if entries exceed a certain limit.
+Full page dialog: For adding new OKRs with key results, following consistent spacing and form alignment. Use the close icon on top-right to close. Always ask for confirmation before closing. CTAs will be sticky at the bottom of the screen.
+Modal: For showing tips and confirmation, following consistent spacing and form alignment. Always make them appear in the middle of the screen.
+Toast: For showing success and failure to do CRUD actions, following consistent spacing and form alignment. Use an icon on left and close icon on right to help users close it. Always make them appear on the top-right of the screen.
+Card: For showing any objective. Show a donut to represent the percentage/numeric figure of the objective is achieved. Number of KRs attached, last updated, due date (show overdue by no. of days, if overdue), status (e.g. On track, off track, At risk, completed). Follow consistent spacing and form alignment for each card
+Status chip: Show an 8px rounded lozenge with text
+Filter chip: Show a rounded dismissable chip in grey (#FAFAFB).
+Side drawer: Always open the side drawer on a back drop. For filters, use the side drawer. 
+Accessibility
+Ensure all interactive elements have hover, selected and focus states.
+Support keyboard navigation and include ARIA labels.
+Use text alternatives for icons and charts.
+Responsiveness
+Design for desktop, tablet, and mobile views.
+Use collapsible menus and adaptable charts for smaller screens.
+Microinteractions
+Add hover states for buttons and links.
+Include subtle animations for loading data (e.g., a spinner or skeleton loader).
+Create no data states (e.g. no OKR added by a user)
+Userflow Specific Requirements:
+1. Login Screen (First Screen on URL Hit)
+Page Layout: Split-screen design:
+Left Section (Intro):
+Headline:
+“Welcome to {OKR App} – Your Personal OKR Assistant!”
+Subtext:
+“Define goals, track progress, and achieve greatness. Your journey starts here!”
+Robot Mascot: Friendly robot mascot (🤖) waving, with a speech bubble:
+“Hey there! Ready to crush some goals?”
+Right Section (Login Form):
+Headline:
+“Log in to Get Started!”
+Login Options:
+Email & Password Form:
+Fields:
+Email Input Field: Placeholder: “Enter your email.”
+Password Input Field: Placeholder: “Enter your password (Eye icon on right to show encrypted password).”
+Google Login Button:
+“Sign in with Google (Google logo).”
+Button: “Log In.”
+Link: “Forgot Password?”
+Sign-Up Prompt:
+Subtext: “Don’t have an account yet?”
+Button: “Create One.”
+
+2. Google Login Flow Prompt:
+Screen:
+“🔄 Redirecting to Google… Please wait a moment 🚀.”
+Loader: Display animated mascot juggling Google icons to entertain during the process.
+Fallback Button: “Having trouble? Retry Google Login .”
+
+3. Email Login Flow Prompt:
+Form Validation:
+Empty fields: Inline error message beneath the field:
+Email Field: “Email is required.”
+Password Field: “Password is required.”
+Incorrect Credentials:
+Toast message at the top:
+“ Uh-oh! Your email or password isn’t correct. Try again or reset your password.”
+CTA: “Forgot Password?.”
+
+4. Sign-Up / Create Account Prompt:
+Headline:
+“🎉 Join {OKR App} – Let’s Achieve Greatness Together!”
+Form Fields:
+Full Name: Placeholder: “Enter your full name.”
+Email: Placeholder: “Enter your email.”
+Password: Placeholder: “Create a secure password.” (Show checklist of the password requirements e.g. one-digit, unique character, etc)
+Confirm Password: Placeholder: “Confirm your password.”
+CTA Button:
+Primary: “Create My Account.”
+Secondary: “Already have an account? Log In Here.”
+
+5. Authentication Flow Prompts:
+Email Verification:
+Screen after sign-up:
+Headline: “Verify Your Email to Get Started!”
+Subtext: “We’ve sent a confirmation link to {user@example.com}. Check your inbox and click the link to activate your account.”
+Mascot: Robot holding an envelope with a smile.
+CTA Button: “Resend Verification Email.”
+Password Reset Prompt:
+Form:
+Headline: “Forgot Your Password?”
+Subtext: “No worries, we’ve got you covered!”
+Fields:
+Email Field: Placeholder: “Enter your email address.”
+CTA Button: “Send Reset Link.”
+Confirmation Message:
+“Reset email sent! Check your inbox for further instructions.”
+
+6. Error States for Login & Sign-Up:
+For Sign-Up:
+Email already registered:
+Inline message: “This email is already in use. Try logging in instead.”
+Weak password:
+Inline message: “Your password must include at least 8 characters, a number, and a special character.”
+For Login:
+Unregistered email:
+Inline message: “No account found with this email. Please sign up.”
+Locked account:
+Toast message: “Your account has been locked after multiple failed attempts. Contact support for help.”
+
+
+7. Global App Bar (Applies to All Screens)
+Left Section:
+App Logo on the left: Center-aligned vertically.
+Middle Section:
+Links: “Home,” “OKRs,” “Team,” and “Reports.”
+Active Tab: Highlight “Home” (e.g., underline or a different color).
+Right Section:
+User Avatar:
+Clicking the avatar opens a dropdown menu with options:
+“View Profile.”
+“Settings.”
+“Logout.”
+Notification Bell Icon:
+Red (Use color code added in foundations) badge shows number of unread notifications (if any).
+
+8. Prompt for Avatar Menu (Dropdown):
+Options in Dropdown:
+View Profile: Takes the user to a profile view page.
+Settings: Opens a settings page with toggles for notifications.
+Logout: Logs the user out with a confirmation modal (if any unsaved changes).
+
+9. Prompt for Profile View Page:
+Profile Fields:
+Upload a Picture (placeholder for avatar).
+First Name & Last Name (editable text fields).
+Designation & Department (editable text fields).
+Role: Non-editable field.
+Manager: Non-editable field
+Change Password Section:
+Old Password: Input field.
+New Password: Input field.
+Confirm New Password: Input field.
+CTA: "Update Password."
+
+10. Prompt for Settings Page:
+Notification Toggles Section:
+Header:
+“Manage Notifications”
+Description:
+“Stay informed about your goals and updates. Customize how you receive alerts.”
+Notification Toggles:
+Email Notifications:
+Toggle Label: “Email Notifications.”
+Description (below the label):
+“Get detailed updates sent directly to your inbox for comments, assignments, and OKR changes.”
+Default: Toggle ON for first-time users.
+Push Notifications:
+Toggle Label: “Push Notifications.”
+Description (below the label):
+“Receive real-time alerts on your device for goal progress, comments, and mentions.”
+Default: Toggle ON for first-time users.
+Save Button:
+Primary CTA: “Save Changes.”
+Success Message (Post-Save):
+Toast Notification:
+“Your notification preferences have been updated successfully!”
+
+
+11. Prompt for Notifications Page:
+Design:
+Centre-aligned notifications in card format. This card will include the notification with the date and timestamp
+Unread notifications: Background color as per foundations with a dot badge on the right.
+Read notifications: Regular background color.
+Clicking a notification opens the relevant OKR/comment.
+
+12. First-Time User Home Screen
+Welcome Section:
+Headline: “Welcome to {OKR App}, {Username}!”
+Subtext: “Let’s get started with your goals.”
+CTA Section:
+Primary CTA: “Create Your First OKR .”
+Tertiary Link:
+Text: “Best Practices for Creating SMART Goals 💡.”
+Action: Opens a modal with examples and guidance.
+
+13. Habitual User Home Screen
+Welcome Section:
+Headline: “Welcome back, {Username}! .”
+Subtext: “Here’s how your goals are shaping up.”
+OKR Status Chart:
+Column Chart showing status breakdown:
+On Track.
+At Risk.
+Off Track.
+Completed.
+Your OKRs Section:
+Heading:
+“Your OKRs .”
+To the right:
+Primary CTA: “Create New OKR.”
+Tertiary Link:
+Text: “Best Practices for Creating SMART Goals 💡.”
+Action: Opens a modal with examples and tips.
+Card View for OKRs:
+Cards with details for each OKR:
+Donut Chart: Percentage of the objective achieved.
+Details:
+Number of Key Results.
+Last Updated: “Updated 2 days ago.”
+Due Date: If overdue, display: “Overdue by 5 days!”
+Status: “On Track,” “At Risk,” or “Completed.”
+CTA on Cards: “View Details.”
+
+Error Cases & Prompts for Notifications:
+Unread Notification UI:
+Card background in lighter shade + red dot on the right for unread.
+Clicking navigates to the related link (OKR/Comment).
+No Notifications:
+Display Robot Mascot with text: “📭 No new notifications! You’re all caught up!”
+
+
+14. Creating OKR Flow (Initial State)
+Objectives Section:
+Fields:
+Title:
+Placeholder: “E.g., Improve Customer Satisfaction.”
+Validation: “ Title is required.”
+Description (Optional):
+Placeholder: “Add more context to your objective.”
+Owner:
+Default: Logged-in user.
+Searchable dropdown to change ownership (other team members).
+Due Date:
+Date Picker with placeholder: “Select a due date.”
+Validation: “Due date must be in the future.”
+Category (Optional):
+Dropdown Menu:
+Options: List of available categories.
+Admin View:
+Search for a new category; in dropdown menu show a link on right “+ Add”
+Add Key Results CTA:
+“+ Add Key Result.”
+Key Results Section (Expanded on Click):
+Fields for Each Key Result:
+Title: Placeholder: “E.g., Increase NPS Score.”
+Measurement Scale: Radio Buttons:
+Percentage (Default).
+Numeric.
+Current Value: Placeholder: “Enter the current value.”
+Total Value: Placeholder: “Enter the target value.”
+Owner: Default to user but can be changed.
+Due Date: Date picker for the KR’s individual deadline.
+
+Error Cases While Creating OKRs
+Empty Fields:
+Objective Title: “Objective title is required.”
+Key Result Title: “ Key result title is required.”
+Due Date: “Please select a valid date.”
+
+15. Removing a Key Result While Creating
+UI Flow:
+Trash Icon next to each KR in the list.
+Prompt: “Are you sure you want to delete this key result? This action cannot be undone.”
+CTAs:
+Primary: “Yes, Delete.”
+Secondary: “Cancel.”
+
+16. Editing an OKR Later
+UI Flow:
+Open OKR in the same full-page modal.
+Fields pre-filled with existing data.
+Editable Fields:
+Objective Title, Description, Due Date, Owner, Category (as per role permissions).
+Key Result Title, Measurement Scale, Values, Owner, Due Date.
+Save Changes CTA:
+Toast on Save: “OKR updated successfully!”
+
+17. Copying an Existing OKR
+UI Flow:
+From the OKR list view, an action icon (e.g., three-dot menu) has a “Copy OKR” option.
+Open the Create OKR Modal pre-filled with the copied OKR details.
+Add a message at the top:
+“You are creating a copy of {Objective Name}. Adjust details as needed.”
+Save CTA:
+Toast: “New OKR created from the copied objective!”
+
+18. Deleting an OKR
+UI Flow:
+Delete Icon in OKR list view or inside the OKR modal.
+Confirmation Modal:
+Message:
+“Are you sure you want to delete the objective [Objective Name]? This will also delete all associated key results.”
+CTAs:
+Primary: “Yes, Delete.”
+Secondary: “Cancel.”
+Toast on Success: “OKR deleted successfully!”
+
+19. Assigning an OKR to Multiple People
+UI Flow:
+In the Owner Field for both Objectives and Key Results:
+Dropdown allows selecting multiple users.
+Add Tooltip: “Assign this OKR to multiple team members. Each member will track progress individually.”
+Success Message on Save:
+Toast: “OKR assigned to [X users].”
+
+20. Prompt for Team screen
+
+General Design
+Screen Type: Full-page listing view. (Use search, filers and sorting as mentioned in the foundations)
+Header:
+Title: “Team Directory.”
+Subtext: “View and manage team members and their OKRs.”
+Table Columns:
+Username:
+Displays avatar (left), full name (primary text), and email (subtext).
+Joined On:
+Displays the formatted join date (e.g., “Jan 15, 2024”).
+Role:
+Displays role (Admin, Manager, Employee) as a tag with light gray background.
+Department:
+Displays the department name (e.g., “Engineering”).
+Designation:
+Displays the employee’s designation (e.g., “Software Developer”).
+OKRs Created:
+Displays the count (e.g., “5”).
+Manager:
+Displays the manager’s name.
+
+21. Role-Based Access Flows
+Employee View:
+Access Permissions:
+Can only view the table.
+All rows and columns are non-clickable.
+
+Admin View:
+Permissions:
+Can:
+Edit the profile of any employee.
+Change their role.
+Change manager information.
+Remove a user from the platform.
+Click on the username to navigate to the employee’s goals page.
+Admin-Specific Prompts:
+(a) Editing Profile:
+UI Flow:
+Edit Icon next to the user row.
+Opens a modal:
+Fields:
+Full Name (Editable).
+Email Address (Editable).
+Department (Dropdown).
+Designation (Text Input).
+Role Dropdown:
+Options: Admin, Manager, Employee.
+Manager Dropdown:
+Dropdown shows a searchable list of team members.
+Tooltip: “Select a manager for this user.”
+CTAs:
+Primary: “Save Changes.”
+Secondary: “Cancel.”
+Success Message:
+Toast: “✔️ Profile updated successfully!”
+
+(b) Removing User from the Platform:
+UI Flow:
+Trash Icon next to the user row.
+Opens a confirmation modal:
+Message:
+“Are you sure you want to remove {Username} from the platform? This action cannot be undone.”
+CTAs:
+Primary: “Yes, Remove User.”
+Secondary: “Cancel.”
+Success Message:
+Toast: “✔️ {Username} has been removed from the platform.”
+
+Manager View:
+Permissions:
+Can:
+Edit profile, role, and manager information for employees they manage.
+Remove their employees from the platform.
+Can’t:
+Modify details for employees they don’t manage.
+View or edit admin roles.
+(a) Manager-Limited Actions:
+UI Changes:
+Only rows for managed employees show actionable icons (Edit, Role Dropdown, Trash Icon).
+Other rows appear as view-only.
+(b) Restricted Access Prompt:
+When attempting to edit non-manageable rows, show a message:
+“🚫 You do not have permission to edit this user’s details.”
+
+
+22. UI Prompt for OKRs Screen
+Screen: OKRs Overview (Card View)
+Header Section:
+Title: “🎯 My OKRs”
+CTA:
+Primary Button: “+ Create New OKR” (Top-right corner).
+
+Card View for OKRs:
+Card Layout:
+Top Section:
+Donut Chart: Visual representation of percentage achieved for the objective.
+Details Section:
+Objective Title:
+Bold and prominent at the top.
+Number of Key Results:
+“Key Results: 3 attached.”
+Last Updated:
+Example: “Updated 2 days ago.”
+Due Date:
+Example: “Due: Jan 15, 2025.”
+Overdue example:
+Red Text: “Overdue by 5 days!”
+Status Tag:
+Use status tags with color-coded backgrounds:
+Grey: “On Track.”
+Yellow: “Off Track.”
+Red: “At Risk.”
+Green: “Completed.”
+CTA on Card:
+Button: “View Details” (Aligned bottom-right).
+
+Details View (Upon Clicking a Card):
+Header Section:
+Title: Display the Objective Name.
+Metadata (Aligned to the Right):
+Created By: [Username].
+Created On: [Date].
+Last Updated: [Date].
+
+Objective Section:
+Objective Details:
+Title.
+Description (if any).
+Owner: [Name].
+Due Date.
+Status Tag (On Track, At Risk, Completed).
+Category.
+
+Key Results Section (Collapsible List):
+For Each KR:
+Title: Name of the key result.
+Measurement Scale: Percentage/Numeric.
+Values: Current Value vs. Target Value.
+Owner: Assigned person’s name.
+Due Date: Deadline for the KR.
+
+Comment Section (At the Bottom):
+Header:
+“💬 Comments.”
+Comment Box (for input):
+Placeholder: “Write a comment… 💭.”
+CTA: “Post Comment.”
+Existing Comments:
+Display as threaded comments:
+Avatar + Username (Bold).
+Timestamp.
+Comment Text.
+Actions for Each Comment (if created by the user):
+Edit Icon.
+Delete Icon.
+Tooltip for non-editable comments: “You can only edit your own comments.”
+
+Error States and Empty States:
+Empty State for OKRs:
+Message:
+“🚀 Ready to set your goals? Create your first OKR to get started!”
+CTA:
+Primary: “+ Create New OKR.”
+Error State (e.g., Data Fetch Issue):
+Message:
+“⚠️ Oops! Something went wrong while loading your OKRs. Please try again.”
+CTA:
+Retry Button: “Reload Page.”
+
+
+
+
+Non-Functional Requirements:
+Performance:
+Page load time under 3 seconds
+Support for up to 1000 concurrent users
+Security:
+Secure authentication (JWT)
+Data encryption in transit and at rest
+Scalability:
+Horizontal scaling capability
+Efficient database queries
+Usability:
+Intuitive user interface
+Responsive design for mobile and desktop
+Accessibility compliance (WCAG 2.1 Level AA)
+Reliability:
+99.9% uptime guarantee
+Automated backups and disaster recovery plan
+
+Technical Specifications:
+Architecture Overview:
+Unified Frontend and Backend: Next.js with TypeScript and GraphQL
+Database: MongoDB
+State Management: Redux or Context API
+UI Components: Shadecn/ui or Tailwind CSS (Create theme using above foundation elements for the UI components)
+Charts and Visualizations: Chart.js or D3.js
+
+Data Model:
+Users: ID, name, email, role, password (hashed)
+OKRs: ID, title, description, owner, department, assignees, start_date, end_date, status
+Key Results: ID, okr_id, description, target_value, current_value
+Comments: ID, okr_id, user_id, content, timestamp
+
+APIs:
+User Management API (CRUD operations)
+OKR Management API (CRUD operations)
+Reporting API
+Notification API
+
+Third-party Services:
+Authentication: JWT, should be integrated with the Next js framework.
+Email Service: SendGrid or Amazon SES
+Cloud Storage: AWS S3 or Google Cloud Storage
+
+Workflow:
+Set up development environment (Next.js, Node.js, MongoDB)
+Implement user authentication and authorization
+Develop OKR CRUD operations
+Create OKR tracking and visualization features
+Implement reporting and analytics functionality
+Develop collaboration features
+Set up notification system
+Optimize performance and ensure responsiveness
+Conduct thorough testing
+Deploy to production environment
+
+Testing and Validation:
+Unit testing for individual components and functions
+Integration testing for API endpoints
+End-to-end testing for user flows
+Performance testing to ensure scalability
+User acceptance testing with a sample group of users
+
+Acceptance Criteria:
+All functional requirements are implemented and working as expected
+Non-functional requirements are met (performance, security, usability)
+Code passes all automated tests
+User acceptance testing is successful
+
+Error Handling and Recovery:
+Implement try-catch blocks for error handling
+Log errors with detailed information for debugging
+Display user-friendly error messages
+Implement an automatic retry mechanism for failed API calls
+Regular database backups and restore procedures
+
+Security Considerations:
+Implement HTTPS for all communications
+Use crypt for password hashing
+Implement rate limiting to prevent brute-force attacks
+Regular security audits and penetration testing
+Implement CSRF protection
+Follow OWASP security best practices
+
+Performance Optimization:
+Implement caching strategies (Redis for server-side, local storage for client-side)
+Use pagination for large data sets
+Optimize database queries and indexes
+Implement lazy loading for images and components
+Use server-side rendering for initial page loads
+
+Documentation:
+Maintain up-to-date API documentation
+Include inline code comments for complex logic
+Create user guides and FAQs for end-users
+Document deployment and maintenance procedures
+Keep a changelog for version control
+Create a comprehensive ReadMe.md file
+
+Development practices to be followed:
+Every endpoint should be setup according to the best practices followed in a nextJs application. There shouldn’t be any independent setup for different endpoint.
+The BE and the FE should be centralized. Both being handled by Next JS
+Implement Page Object Model (POM)
+Implement unit tests for all components
+Use camel case notations for files, variables, and method names
+Implement Dynamic Imports:
+Use dynamic imports for code splitting and optimization to improve initial load times
+Implement suitable design patterns e.g. Factory Method, Abstract Factory, Chain of Responsibility, Adapter, e.t.c
+Implement SOLID principles e.g. Single Responsibility Principle, Open-Closed Principle, Liskov Substitution Principle, Interface Segregation Principle, Dependency Inversion Principle.
+Enable Strict Type Checking
+Integrate ESLint with TypeScript
+Implement import aliases for clean imports
+Folder hierarchy should be according to the latest best practices.
+Add commenting when implementing different functions/flows/endpoints for better visibility.
+Other functionalities:
+Implementing AI-powered OKR suggestions
+Developing advanced team performance analytics
+Integrating with popular project management tools
+Expanding language support for internationalization
+
+Context Information:
+The app will be a standalone system with potential integrations to existing communication tools (e.g., Slack)
+Consider future scalability requirements as the user base grows
+Ensure the system is flexible enough to accommodate different OKR methodologies used by various organizations

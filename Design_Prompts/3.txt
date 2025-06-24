@@ -1,0 +1,913 @@
+
+
+
+Teams Page
+
+Please make the following updates on this page:
+Update Heading: Change the page heading to "Team".
+Use a Table Layout:
+Replace the card layout with a Radix UI Table.
+Use the Radix Table from the Playground with the following settings:
+Appearance: Light
+Radius: Medium
+Type: Surface
+Panel Background: Solid White
+Table Structure: The table should have the following columns:
+Username (with an avatar on the left)
+The username should be a blue link (#0071E1).
+On hover, the link should be underlined.
+Role Tag (either Admin or User).
+Email
+Department
+Designation
+OKR Count
+Pagination:
+Display 8 entries per page.
+Implement pagination for additional entries.
+If the data exceeds the above-the-fold space, enable a scrollable container to prevent unnecessary page stretching.
+Background:
+The background of the Team Page should remain grey as it is.
+Note: Ensure all UI components are from Radix UI and are styled consistently with the existing design.
+
+
+
+
+
+
+
+OKRs Page
+
+Please make the following updates on this page:
+1. Remove Navigation Arrows
+Remove the left-right arrows from the OKR cards.
+2. Add Tabs for OKR Categories
+Below the page heading, introduce two Radix UI Tabs:
+All OKRs (Default Selected)
+Archived OKRs
+The selected tab should be styled in blue (#0071E1).
+3. Add Search & Sorting Controls
+Positioning:
+Left Side: Add a search input field.
+Right Side: Add a Sort By Dropdown with the label "Sort By" placed to the left of the dropdown.
+Dropdown Options:
+Recently Updated (Default Selection)
+Alphabetically
+Creation Date
+4. Adjustments to OKR Cards
+The card layout remains the same, but with the following refinements:
+Objective should be displayed at the top of the card.
+At the bottom of the card, display the following as subtext, separated by vertical dividers (|):
+Owner = Username (Displayed in default text color, but on hover, it should be underlined).
+Due Date = [Date].
+Last Updated = [Time Ago] (e.g., "1 day ago", "20 mins ago").
+On the right side of the card:
+Status Indicator Tag (Use the following color codes):
+On Track: Grey (#B3BCC5).
+Off Track: Orange (#FF7600).
+At Risk: Red (#FF2538).
+Completed: Green (#53BA00).
+Kebab Icon (⋮) for Overflow Menu.
+Clicking the kebab menu should display the following options:
+Duplicate
+Edit
+Delete
+Archive
+5. Pagination & Scrolling
+Display 8 OKRs per page and add pagination for additional entries.
+If the OKRs exceed the above-the-fold space, enable a scrollable container to prevent excessive page stretching.
+Note: Ensure all UI components are from Radix UI and are styled consistently with the existing design.
+
+
+
+
+
+
+Dashboard page
+
+Please make the following updates on this page:
+
+(Charts Section):
+Replace the Stacked Bar Chart
+Use a Simple Bar Chart from the Recharts library instead.
+X-Axis: Display OKRs (each OKR represented by a bar).
+Y-Axis: Display Percentage (%) to show progress.
+Bars should be styled in blue (#0071E1) to maintain consistency with the design.
+Note: Ensure the chart integrates smoothly with the existing layout and follows the same visual style.
+
+(Teams Section):
+Keep the existing card layout that displays team members as avatars.
+Add a Tooltip on Hover:
+Use Radix UI Tooltip.
+When hovering over an avatar, the tooltip should display the employee's username.
+Note: Ensure smooth interactions and styling consistency with the existing design.
+(Your Feed Section):
+Heading: Add a section heading "Your Feed".
+Card Layout: Use the same card design as in the OKR page.
+Card Contents: Each feed card should include:
+{Username} {Action} on {OKR}.
+Username and OKR should be:
+Clickable links in blue (#0071E1).
+On hover, they should be underlined.
+Clicking the Username should direct the user to that user’s OKR page.
+Clicking the OKR should direct the user to the OKR detail page.
+Subtitle: Show the time when the action was performed (e.g., "5 mins ago," "Yesterday," "2 days ago").
+Limit Entries: Display only the most recent 8 actions.
+Note: Ensure smooth interactions and styling consistency with the existing dashboard UI.
+
+(General Changes):
+Remove the Right Arrow:
+Remove the right arrow from the layout.
+Update Heading:
+Change the OKR Dashboard heading to:
+"Welcome {username}!" (Dynamically replace {username} with the logged-in user’s name).
+Enable Scrolling:
+If content exceeds the viewport, enable scroll functionality to ensure all sections remain accessible.
+Background Color:
+Keep the background color as grey, consistent with the other pages.
+Update "Create OKR" Button:
+Change the Create OKR button color to blue (#0071E1).
+Highlight Active Tab:
+In the top navigation bar, ensure the Dashboard tab is:
+Selected by default.
+Styled in blue (#0071E1) to indicate it’s the active page.
+Note: Ensure smooth interactions, consistent styling, and proper layout adjustments across the dashboard.
+
+
+
+Please add the following:
+
+Profile page 
+Header Section
+Title: "Profile"
+Prominent, left-aligned, styled with a bold font (e.g., Poppins, size: 20px, color: #202020).
+Profile Picture Section
+Placement: Above the form layout, left- aligned horizontally.
+Elements:
+Profile Picture Display:
+Circular placeholder (e.g., 120px x 120px) with a border (#E0E0E0, 2px).
+Default image/icon if no picture is uploaded.
+Edit Option:
+A small camera icon overlay on the bottom-right of the picture.
+Clicking the icon opens a file picker for uploading an image.
+Upload Validation:
+Supported file types: .jpg, .png.
+Maximum file size: 5MB.
+Error messages in red (#FF2538) for invalid formats or sizes.
+Remove Option:
+A "Remove Picture" button/link (small text, blue color: #0071E1) for users to delete the current image.
+Form Layout
+Organization: The form is arranged in two columns for a clean and balanced layout. Fields are spaced evenly for readability.
+Fields:
+First Name:
+Text input field with validation.
+Displays an error message in red (#FF2538) if left blank.
+Last Name:
+Text input field with validation.
+Designation:
+Text input field for the user's job title.
+Department:
+Dropdown menu with predefined department options.
+Role:
+Dropdown menu defaulting to "Employee."
+Includes other options, such as "Admin."
+Pre-filled for users.
+Reports To:
+Autocomplete or dropdown field showing a list of employees.
+
+Change Password Section
+Layout:
+Fields are displayed in a single column for clarity, with consistent spacing.
+Fields:
+Old Password:
+Password input field with a "show/hide" toggle.
+New Password:
+Password input field with a strength indicator.
+Visual cues (e.g., weak, medium, strong) provided for better feedback.
+Confirm New Password:
+Password input field with auto-validation to ensure it matches the new password.
+Error message in red (#FF2538) if the passwords do not match.
+
+Buttons and Actions
+Save Changes:
+Primary Button:
+Background color: Blue (#0071E1).
+Positioned at the bottom of each section (Form Layout and Change Password Section).
+Disabled State: If no changes are detected, the button remains grayed out.
+On form errors, highlight invalid fields with red (#FF2538) borders and error text.
+Cancel:
+Secondary Button:
+Outlined in blue (#0071E1).
+Allows the user to discard changes.
+Modal Trigger: If unsaved changes exist, display a confirmation modal.
+
+
+Avatar > Dropdown Menu Layout
+User Info Section
+User Name:
+Color: #202020
+Font Size: 14px
+Font Weight: 600 (Semi-Bold)
+Email Address:
+Color: #646464
+Font Size: 12px
+Font Weight: 400 (Regular)
+Spacing:
+Add a 4px margin between the name and email.
+8px padding below the email to visually separate it from the next section.
+Separator Line
+Style: A thin, light gray line (#E0E0E0).
+Thickness: 1px
+Margin: 8px 0.
+Menu Options Section
+View Profile:
+Font Size: 14px
+Font Weight: 500
+Padding: 8px 0.
+Settings:
+Same styling as "View Profile."
+Hover Effect:
+Background Color: #F4F4F4
+Text Color: Unchanged.
+Separator Line
+Same style as the first separator.
+Log Out Option
+Font Size: 14px
+Font Weight: 500
+Padding: 8px 0.
+Text Color: Default (#202020).
+Hover Effect:
+Background Color: #F4F4F4
+Text Color: Slightly darker or bold for emphasis.
+Behavior
+Trigger: Dropdown menu appears on avatar click.
+Alignment: Right-aligned to the avatar icon.
+Auto-Close: Closes when the user clicks outside the menu or selects an option.
+
+
+Settings Page
+Header Section
+Title: "Settings"
+Prominent, left-aligned, styled with a bold font (e.g., Poppins, size: 20px, color: #202020).
+
+Notification Settings Section
+Section Title: "Notifications"
+Styled with a semi-bold font (Poppins, size: 16px, color: #202020).
+Positioned at the top of the settings page, with a subtle separator line below (#E0E0E0, 1px thickness).
+Toggle Items:
+Email Notifications:
+Label: "Email Notifications"
+Description: "Get detailed updates in your inbox"
+Font: Poppins, size: 14px, color: #646464 (description).
+Toggle: Switch component (Default: ON, color: #0071E1 when active, #E0E0E0 when inactive).
+Push Notifications:
+Label: "Push Notifications"
+Description: "Receive real-time alerts"
+Font: Poppins, size: 14px, color: #646464 (description).
+Toggle: Switch component (Default: ON, color: #0071E1 when active, #E0E0E0 when inactive).
+
+Buttons and Actions
+Save Button:
+Label: "Save Changes"
+Style:
+Background Color: Blue (#0071E1), text in white (#FFFFFF).
+Rounded corners (4px).
+Font: Poppins, size: 16px, semi-bold.
+Disabled State: Grayed-out if no changes are detected.
+Position: Centered or right-aligned at the bottom of the page.
+
+
+
+Notifications Dropdown
+Trigger
+Icon: Bell icon positioned on the top-right of the app bar.
+Unread Badge: A small red (#FF2538) dot or counter on the icon indicating the number of unread notifications.
+Action: Clicking the icon opens the dropdown menu.
+
+Dropdown Layout
+Header Section
+Title: "Notifications" (bold, centered, Poppins, size: 16px, color: #202020).
+Close Icon: Small close (×) button on the top-right corner.
+Layout
+Text: A concise message summarizing the notification. For example;
+"Progress updated for [Objective Name]."
+"Status changed to 'On Track' for [Objective Name]."
+"Due date reached for [Objective Name]."
+"[Manager Name] updated [Objective Name]."
+"Due date is today for [Objective Name]."
+"[Colleague Name] commented: 'Great progress!'"
+Timestamp: A small, gray text (e.g., "5 minutes ago").
+Differentiation Between Read and Unread
+Unread Notifications:
+Bold text.
+Slightly highlighted background color (e.g., light gray: #F4F4F4).
+Read Notifications:
+Regular font weight.
+No background highlight.
+Footer Section
+View All Notifications Link:
+Text: "View All Notifications" (blue color: #0071E1).
+Font: Poppins, size: 14px, semi-bold.
+Positioned at the bottom of the dropdown.
+Clicking redirects to a dedicated Notifications Page
+Behavior
+Mark as Read:
+Clicking on a notification marks it as read, updating the UI (e.g., text changes to normal weight, background resets).
+Real-Time Updates:
+New notifications are dynamically added at the top of the list.
+Auto-Close:
+Dropdown auto-closes when the user clicks outside or selects "View All Notifications."
+
+
+Notifications Page
+Page Layout
+Header Section
+Title: "Notifications"
+Left-aligned, styled with a bold font (e.g., Poppins, size: 24px, color: #202020).
+Subheading: Optional description text (e.g., "View and manage your recent activity notifications") in gray (#646464), font size: 14px.
+
+Main Content
+Notification Cards
+Alignment: All notifications are center-aligned within the main container. Cards are stacked vertically with spacing between each card (e.g., 16px).
+Card Style:
+Background:
+Unread Notifications: Highlighted background (e.g., light gray: #F4F4F4).
+Read Notifications: Regular white background (#FFFFFF).
+Border: Subtle border (#E0E0E0, 1px) with rounded corners (e.g., 8px).
+Shadow: Optional soft shadow for depth (e.g., box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);).
+Padding: 16px inside each card.
+Spacing: 16px margin between cards.
+Notification Content
+Each notification card includes:
+Message:
+Unread: Bold text (Poppins, size: 14px, color: #202020).
+Read: Regular text (Poppins, size: 14px, color: #646464).
+Example:
+"Progress updated to 75% for [Objective Name]."
+"[Manager Name] added a comment: 'Great progress!'"
+Timestamp:
+Small text in gray (#9E9E9E), aligned to the right.
+Example: "5 minutes ago."
+
+Behavior
+Unread Indicator
+Unread Cards:
+Display with a subtle highlight (e.g., light gray background: #F4F4F4) and bold text for emphasis.
+Automatically marked as read when clicked.
+Read Cards:
+Standard white background and regular font weight.
+Interactivity
+Clickable Cards:
+The entire card is clickable.
+Clicking a card opens the relevant OKR detail page.
+Hover Effect:
+Slight background color change on hover (e.g., #FAFAFA).
+Footer Section
+Pagination or Infinite Scroll:
+Pagination buttons ("Previous" and "Next") or infinite scrolling to load more notifications.
+
+
+
+Create OKR Page 
+Trigger
+Button: "Create OKR" button available on both the Dashboard and OKR Page.
+Style: Prominent button with a primary color background (#0071E1) and white text.
+Behavior: Clicking this button navigates to the "Create OKR" page.
+Create OKR Page Layout
+Header Section
+Title: "Create New OKR"
+Left-aligned, styled with a bold font (e.g., Poppins, size: 24px, color: #202020).
+Subheading: Optional helper text (e.g., "Define objectives and key results to track progress effectively.").
+Section 1: Define Objective
+Card Layout:
+Use a card or form section with a title: "Define Objective."
+Fields are displayed in a single column for clarity.
+Fields:
+Title:
+Input Field (Required).
+Placeholder: "Enter objective title."
+Validation: Highlight field in red (#FF2538) if left blank.
+Description:
+Text Area (Optional).
+Placeholder: "Add a brief description (optional)."
+Owner:
+Dropdown/Autocomplete:
+Default value: Logged-in user.
+Option to reassign to another team member.
+Due Date:
+Date Picker:
+Validation: Must be a future date.
+Placeholder: "Select due date."
+
+Section 2: Key Results
+Title: "Key Results"
+
+
+Styled as a subsection header (Poppins, size: 18px, color: #202020).
+Fields for Each Key Result:
+
+
+Displayed in a card
+Title:
+Input Field (Required).
+Placeholder: "Enter key result title."
+Measurement Scale:
+Dropdown Menu:
+Options: "Percentage," "Numeric."
+Default: "Percentage."
+Current Value:
+Input Field:
+Placeholder: "Enter current value."
+Disabled if "Percentage" is selected (defaults to 0%).
+Total Value:
+Input Field:
+Placeholder: "Enter target value."
+Required for Numeric scale.
+Owner:
+Dropdown/Autocomplete:
+Default value: Logged-in user.
+Option to assign a different owner.
+Due Date:
+Date Picker:
+Validation: Must be a future date.
+Placeholder: "Select due date."
+
+Text button: "Add Key Result" button located on the right of the Key Results heading.
+Style: Text button with a "+" icon.
+Behavior: Dynamically adds a new key result card with blank fields.
+
+Buttons and Actions
+Primary Buttons:
+Save Objective: Blue button (#0071E1) with white text.
+Disabled until all required fields are validated.
+Cancel: Secondary outlined button with blue border and text (#0071E1).
+Discards unsaved changes and returns to the previous page.
+
+Behavior
+Validation:
+Required fields are validated upon clicking "Save Objective."
+Show inline error messages in red (#FF2538) for incomplete or invalid inputs.
+Navigation:
+Clicking "Cancel" displays a confirmation modal if there are unsaved changes.
+
+
+Edit OKR Page Layout
+Header Section
+Title: "Edit OKR"
+Left-aligned, styled with a bold font (e.g., Poppins, size: 24px, color: #202020).
+Subheading: Optional helper text (e.g., "Update your objective and key results as needed.").
+
+Section 1: Objective
+Card Layout:
+A form section with the title: "Objective."
+Pre-filled with the current OKR details for editing.
+Fields:
+Title:
+Input Field (Required).
+Pre-filled with the existing objective title.
+Validation: Highlight field in red (#FF2538) if left blank.
+Description:
+Text Area (Optional).
+Placeholder: "Add the description (optional)."
+Pre-filled with the existing description.
+Owner:
+Dropdown/Autocomplete:
+Default: Current owner.
+Option to reassign to another team member.
+Due Date:
+Date Picker:
+Pre-filled with the existing due date.
+Validation: Must be a future date.
+
+Section 2: Key Results
+Title: "Key Results"
+Styled as a subsection header (Poppins, size: 18px, color: #202020).
+Fields for Each Key Result:
+Each key result is displayed as an editable card or collapsible section.
+Title:
+Input Field (Required).
+Placeholder: "key result title."
+Pre-filled with the existing title.
+Measurement Scale:
+Dropdown Menu:
+Options: "Percentage," "Numeric."
+Pre-filled with the existing scale.
+Current Value:
+Input Field:
+Placeholder: "Enter current value."
+Pre-filled with the existing value.
+Total Value:
+Input Field:
+Placeholder: "Enter target value."
+Pre-filled with the existing value.
+Required for Numeric scale.
+Owner:
+Dropdown/Autocomplete:
+Default: Current owner of the key result.
+Option to reassign to another team member.
+Due Date:
+Date Picker:
+Pre-filled with the existing due date.
+Validation: Must be a future date.
+Add Key Result Button:
+"Add Key Result" button located on the right of the Key Results heading.
+Style: Text button with a "+" icon.
+Behavior: Dynamically adds a new key result card with blank fields.
+Remove Key Result:
+Each key result card includes a small "Delete" button/icon (e.g., trash can) to remove the key result.
+Buttons and Actions
+Primary Buttons:
+Save Changes: Blue button (#0071E1) with white text.
+Disabled until all required fields are validated.
+Cancel: Secondary outlined button with blue border and text (#0071E1).
+Discards unsaved changes and returns to the previous page.
+
+Behavior
+Pre-filled Data:
+All fields are pre-filled with the current OKR details for easy editing.
+Validation:
+Required fields are validated upon clicking "Save Changes."
+Show inline error messages in red (#FF2538) for incomplete or invalid inputs.
+Navigation:
+Clicking "Cancel" displays a confirmation modal if there are unsaved changes.
+
+
+Delete OKR 
+Trigger
+Action: Users can delete an OKR by clicking the "Delete" button/icon on the OKR details page or list view.
+Button Style:
+A small red button (#FF2538) with a trash can icon and label "Delete."
+Positioned in a visible yet non-intrusive location (e.g., bottom-right of the OKR card or page).
+Behavior: Clicking the button triggers a confirmation modal.
+
+Confirmation Modal Layout
+Header
+Title: "Delete OKR"
+Left-aligned, styled with a bold font (e.g., Poppins, size: 20px, color: #FF2538).
+
+Body
+Message:
+"Are you sure you want to delete this OKR? This action cannot be undone."
+Display the objective title for context, e.g., "Objective: Increase Customer Satisfaction by 20%".
+Optional warning icon (e.g., exclamation mark in red circle) to emphasize importance.
+
+Buttons
+Confirm Delete:
+Style: Red button (#FF2538) with white text (#FFFFFF).
+Label: "Delete."
+Behavior: Permanently deletes the OKR upon confirmation.
+Cancel:
+Style: Secondary outlined button with gray border (#E0E0E0) and text (#646464).
+Label: "Cancel."
+Behavior: Closes the modal without making changes.
+
+Behavior
+Modal Behavior:
+Blocks interaction with the background until the user confirms or cancels.
+Open modal on a backdrop.
+Auto-focus on the "Cancel" button for safety.
+Confirmation:
+Clicking "Delete" triggers a backend request to delete the OKR.
+Users are redirected to the OKR list or dashboard after successful deletion.
+
+
+Duplicate/Clone OKR 
+Trigger
+Action: Users can duplicate/clone an OKR by clicking the "Duplicate" button/icon on the OKR details page or list view.
+Button Style:
+A small button with a copy icon and label "Duplicate."
+Positioned alongside other actions (e.g., Edit, Delete) in a visible yet non-intrusive location.
+Behavior: Clicking the button triggers a modal or redirects to the "Create OKR" page with pre-filled data.
+
+Duplicate OKR Modal/Page Layout
+Header
+Title: "Duplicate OKR"
+Left-aligned, styled with a bold font (e.g., Poppins, size: 24px, color: #202020).
+
+Body
+Objective Section
+Pre-filled Fields:
+Title:
+Pre-filled with the original OKR's title, appended with " (Copy)" for clarity.
+Editable by the user.
+Description:
+Pre-filled with the original OKR's description.
+Editable by the user.
+Owner:
+Default: Logged-in user.
+Editable via a dropdown/autocomplete field.
+Due Date:
+Default: Empty (user must set a new date).
+Validation: Must be a future date.
+Key Results Section
+Pre-filled Key Results:
+All key results from the original OKR are listed with their details:
+Title: Pre-filled and editable.
+Measurement Scale: Retains the original value (Percentage or Numeric).
+Current Value: Defaulted to 0 or cleared.
+Total Value: Retained from the original key result.
+Owner: Default: Logged-in user; editable.
+Due Date: Default: Empty (user must set a new date).
+Footer Section
+Save as New OKR:
+Primary Button:
+Label: "Save as New OKR."
+Style: Blue background (#0071E1) with white text (#FFFFFF).
+Disabled until all required fields are validated.
+Cancel:
+Secondary Button:
+Label: "Cancel."
+Style: Outlined button with blue text (#0071E1).
+Closes the modal or redirects back without changes.
+Behavior
+Pre-filled Data:
+The new OKR is pre-filled with the original OKR's details for both objectives and key results.
+Users can edit any of the fields before saving.
+Validation:
+Required fields (e.g., Title, Due Date) must be filled before the user can save.
+Show inline validation errors in red (#FF2538) for invalid or missing inputs.
+Redirection:
+After saving, the user is redirected to the OKR details page of the newly created OKR.
+
+Updated prompt: OKR Listing Page
+Header
+Title: "OKRs"
+Left-aligned, styled with a bold font (e.g., Poppins, size: 24px, color: #202020).
+Subheading (optional): Brief helper text, e.g., "Track and manage your objectives at a glance."
+Add Filters Section
+Positioned directly below the header, spanning the full width of the page.
+Style:
+Background: Light gray (#F9F9F9) or white (#FFFFFF).
+Padding: 16px.
+Border: Thin bottom border (#E0E0E0) to visually separate it from the listing.
+Filters Layout
+Filters are horizontally aligned with 16px spacing between each filter dropdown or control.
+Filter by Date:
+Label: "Date Range" (Poppins, size: 14px, color: #202020).
+Component: Date range picker with two fields:
+Start Date.
+End Date.
+Placeholder: "Select date range."
+Filter by Tag:
+Label: "Tags" (Poppins, size: 14px, color: #202020).
+Component: Multi-select dropdown.
+Placeholder: "Select tags."
+Example tags: "Quarter 1," "Team Goals," "High Priority."
+Filter by Owner:
+Label: "Owner" (Poppins, size: 14px, color: #202020).
+Component: Dropdown with a searchable list of users.
+Placeholder: "Select owner."
+Display initials or avatars alongside names in the dropdown for quick recognition.
+Filter by Status:
+Label: "Status" (Poppins, size: 14px, color: #202020).
+Component: Dropdown with predefined status options:
+On Track
+At Risk
+Completed
+Overdue
+Placeholder: "Select status."
+
+Apply and Reset Buttons
+Positioned to the right of the filters for usability.
+Text Buttons:
+Apply Filters:
+Style: Text button (Blue text: #0071E1).
+Label: "Apply Filters."
+Reset Filters:
+Style: Text button (Blue text: #0071E1).
+Label: "Reset."
+
+Objective Card Layout
+Card Style
+Background: White (#FFFFFF).
+Border: Thin border (#E0E0E0) with rounded corners (e.g., 8px).
+Shadow: Optional soft shadow for depth (e.g., box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);).
+Padding: 16px.
+Spacing: 16px vertical margin between cards.
+Card Contents
+Left Section
+Progress Indicator:
+A pie chart visually representing the progress of the OKR.
+Size: 50px x 50px.
+Position: Centered vertically in the card's leftmost section.
+Center Section
+Objective Title:
+Displayed in bold font (e.g., Poppins, size: 16px, color: #202020).
+Truncated if too long (show tooltip with full text on hover).
+Metadata (Subtext):
+Due Date: Example: "Due: Jan 30, 2025."
+Updated On: Example: "Updated: Jan 15, 2025."
+Style:
+Font: Poppins, size: 12px, color: #646464.
+Both items are horizontally aligned, separated by a small dot (•), with 16px spacing between them.
+Right Section
+Status Chip:
+Displays the current status of the OKR (e.g., "On Track," "At Risk," "Completed").
+Style: Rounded pill with dynamic colors based on status:
+On Track: Green (#28A745).
+Off Track: Orange (#FF7600).
+At Risk: Red (#FF2538).
+Completed: Blue (#0071E1).
+Owner Avatar:
+Circular avatar showing the owner's profile picture.
+Hover Tooltip: Displays the owner's full name.
+Spacing: Status chip and avatar are horizontally aligned with 16px spacing.
+Far Right Section
+Kebab Menu:
+Positioned at the card's far-right edge.
+Icon: Vertical ellipsis (⋮).
+Dropdown Options (on click):
+View Details
+Edit
+Clone
+Delete
+
+Card Interactivity
+Clickable Area:
+The entire card (except the kebab menu) is clickable, taking the user to the OKR details page.
+Hover State:
+Slight elevation or background color change (e.g., light gray: #F9F9F9) on hover.
+
+Behavior
+Progress Indicator:
+Pie chart dynamically updates based on OKR progress.
+Kebab Menu:
+Clicking opens a dropdown overlay with the specified options.
+Tooltips:
+Display on hover for truncated objective titles and owner avatars.
+Click Navigation:
+Clicking anywhere on the card (except the kebab menu) navigates to the OKR details page.
+
+
+
+View Details of OKR 
+Trigger
+Action: Users can click on an OKR card or click on view details via the kebab menu in the listing view.
+Behavior: On click, the user is directed to okr details page.
+Header Section
+Title: Display the Objective Title prominently.
+Font: Bold (e.g., Poppins, size: 24px, color: #202020).
+Subheading: Objective metadata in subtext:
+Owner: Display the owner's name or avatar.
+Status: Display a status chip (e.g., "On Track," "At Risk").
+Due Date: Display due date in smaller font.
+Example format:
+"Owner: John Doe • Status: On Track • Due: Jan 30, 2025."
+Style: Light gray (#646464), font size: 14px.
+Progress Overview: Show pie chart on the left of the header title.
+A pie chart showing overall progress.
+Progress Text: "Progress: 75% complete."
+
+Main Content
+Key Results Section
+Title: "Key Results"
+Font: Semi-bold (e.g., Poppins, size: 18px, color: #202020).
+Layout:
+Each key result is displayed as a card or in a collapsible list with the following details:
+Title: Bold text (Poppins, size: 16px, color: #202020).
+Measurement Scale: Percentage or Numeric, e.g., "50% completed" or "25/50."
+Progress Bar:
+Visual bar indicating progress.
+Colors:
+On Track: Green (#28A745).
+At Risk: Orange (#FFC107).
+Overdue: Red (#FF2538).
+Owner: Avatar and name of the key result owner.
+Due Date: "Due: [Date]."
+Updated On: "Last updated: [Date]."
+Comments Section
+Title: "Comments"
+Font: Semi-bold (Poppins, size: 18px, color: #202020).
+Comments Display:
+List of comments, each showing:
+Author: Avatar and name.
+Timestamp: "Posted on [Date/Time]."
+Text: The comment content.
+Style: Comments are shown in light gray cards with subtle borders.
+Add Comment Input:
+Text area for adding a new comment.
+Placeholder: "Write a comment..."
+Button: "Post Comment" (Primary button, blue background: #0071E1).
+Actions Section
+Positioned at the top-right of the page for usability.
+Primary Button:
+Edit OKR: Primary button (Blue background: #0071E1, white text).
+Kebab menu: Inside kebab menu show following options:
+Clone OKR
+Delete OKR
+
+
+User Registration
+Page Layout
+Header Section
+App Logo:
+Positioned at the top-center of the page.
+Style: Clean and minimal logo image or text (e.g., Poppins, size: 24px, color: #202020).
+
+Main Content Section
+Title: "Welcome to [App Name]"
+Centered and styled with a bold font (e.g., Poppins, size: 24px, color: #202020).
+Subheading: "Log in effortlessly using your Google account."
+Font: Regular (e.g., Poppins, size: 14px, color: #646464).
+Positioned below the title with adequate spacing.
+
+Login Button
+Google Login Button:
+A prominent button styled as per Google's branding guidelines:
+Background: White (#FFFFFF).
+Border: Thin border (gray: #E0E0E0, 1px).
+Text: "Sign in with Google" (Font: Roboto, size: 16px, color: #202020).
+Icon: Google logo to the left of the text.
+Hover Effect:
+Background changes to light gray (#F4F4F4).
+Cursor: Pointer.
+Positioning:
+Centered on the page with sufficient margin above and below.
+
+
+
+
+Report Page
+Sections and Features
+1. Team-Wise OKR Progress
+Chart Type: Bar chart or grouped bar chart.
+X-Axis: Teams (e.g., Design, Backend, Frontend, QA).
+Y-Axis: Percentage of OKRs completed.
+Details:
+Display the total number of OKRs per team.
+Interactivity:
+Hovering over bars shows detailed breakdowns (e.g., "5 completed, 3 on track").
+
+2. Team OKRs Progress Chart with Quarterly Comparison
+Chart Description
+Type: Bar Chart.
+X-Axis: Quarters (Q1, Q2, Q3, Q4).
+Y-Axis: Percentage of OKRs completed or the count of OKRs.
+Filters
+Team Name Filter:
+Dropdown menu to select a specific team (e.g., Design, Backend, Frontend, QA).
+Default view shows all teams combined
+Interactivity
+Hover Details:
+Show the breakdown of OKRs for the hovered bar:
+Example: "Q1 - Backend Team: 10 OKRs (6 Completed, 2 On Track, 1 At Risk, 1 Off Track)."
+
+3. OKR Status and Deadline Comparison
+Chart Type: Pie chart for due vs. overdue OKRs.
+Details:
+Pie Chart: Show the proportion of OKRs in each status (e.g., Completed, At Risk, Off Track).
+
+Interactivity:
+Users can filter by team, timeframe, or specific objectives.
+
+
+
+**Navigation**
+
+*   **Top Navigation Bar**:
+    
+*   Replace the left navigation with a horizontal top navigation bar.
+    
+*   **Active Item Styling**:
+    
+*   Font: Poppins
+    
+*   Weight: Bold
+    
+*   Color: Black (#000000)
+    
+*   Other items: Regular weight and gray (#646464).
+    
+*   Include spacing between navigation items for readability (e.g., 24px).
+    
+
+**Team Section**
+
+1.  **Team Heading**:
+    
+    *   Font Size: 32px
+        
+    *   Font Family: Poppins
+        
+    *   Font Weight: Bold
+        
+    *   Color: #202020
+        
+2.  **Subheading**:
+    
+    *   Font Size: 16px
+        
+    *   Font Family: Poppins
+        
+    *   Font Weight: Regular
+        
+    *   Color: #646464
+        
+3.  **Spacing**:
+    
+    *   Add **16px spacing** between the heading and subheading.
+        
+
+**Search and Team Members**
+
+*   Add **16px spacing** between the "Team Members" heading and the search bar.
+

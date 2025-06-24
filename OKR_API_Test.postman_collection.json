@@ -1,0 +1,65 @@
+{
+  "info": {
+    "_postman_id": "okr-app-api-collection",
+    "name": "OKR App API Test Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create OKR",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "http://localhost:3000/api/okrs", "protocol": "http", "host": ["localhost"], "port": "3000", "path": ["api", "okrs"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"objective\": \"Improve team documentation\",\n  \"description\": \"Update all internal docs by end of Q2\",\n  \"keyResults\": [\n    {\n      \"krId\": \"kr1\",\n      \"title\": \"Update onboarding guide\",\n      \"progress\": { \"type\": \"percentage\", \"value\": 0, \"target\": 100 },\n      \"assignedTo\": []\n    }\n  ],\n  \"status\": \"active\",\n  \"startDate\": \"2025-05-01T00:00:00Z\",\n  \"endDate\": \"2025-06-30T23:59:59Z\"\n}"
+        }
+      }
+    },
+    {
+      "name": "List OKRs (User)",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "http://localhost:3000/api/okrs", "protocol": "http", "host": ["localhost"], "port": "3000", "path": ["api", "okrs"] }
+      }
+    },
+    {
+      "name": "List OKRs (Department)",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "http://localhost:3000/api/okrs?departmentId={{departmentId}}", "protocol": "http", "host": ["localhost"], "port": "3000", "path": ["api", "okrs"], "query": [{ "key": "departmentId", "value": "{{departmentId}}" }] }
+      }
+    },
+    {
+      "name": "Get Single OKR",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "http://localhost:3000/api/okrs/{{okrId}}", "protocol": "http", "host": ["localhost"], "port": "3000", "path": ["api", "okrs", "{{okrId}}"] }
+      }
+    },
+    {
+      "name": "Update OKR",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "http://localhost:3000/api/okrs/{{okrId}}", "protocol": "http", "host": ["localhost"], "port": "3000", "path": ["api", "okrs", "{{okrId}}"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"objective\": \"Improve team documentation and onboarding\",\n  \"keyResults\": [\n    {\n      \"krId\": \"kr1\",\n      \"title\": \"Update onboarding guide\",\n      \"progress\": { \"type\": \"percentage\", \"value\": 50, \"target\": 100 },\n      \"assignedTo\": [\"{{userId}}\"]\n    }\n  ]\n}"
+        }
+      }
+    },
+    {
+      "name": "Archive (Soft Delete) OKR",
+      "request": {
+        "method": "DELETE",
+        "url": { "raw": "http://localhost:3000/api/okrs/{{okrId}}", "protocol": "http", "host": ["localhost"], "port": "3000", "path": ["api", "okrs", "{{okrId}}"] }
+      }
+    }
+  ]
+}
