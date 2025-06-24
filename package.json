@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "npx --yes @tailwindcss/oxide install"
   },
   "dependencies": {
     "@dicebear/avatars": "^4.10.8",
@@ -20,6 +21,7 @@
     "@radix-ui/react-progress": "^1.1.6",
     "@radix-ui/react-tabs": "^1.1.12",
     "@sendgrid/mail": "^8.1.5",
+    "@tailwindcss/oxide": "4.1.10",
     "@types/bcryptjs": "^2.4.6",
     "@types/mongodb": "^4.0.6",
     "bcryptjs": "^3.0.2",
@@ -28,7 +30,6 @@
     "clsx": "^2.1.1",
     "dotenv": "^16.5.0",
     "formidable": "^3.5.4",
-    "lightningcss": "1.24.0",
     "lucide-react": "^0.503.0",
     "mongodb": "^5.9.2",
     "next": "^15.3.4",
@@ -57,6 +58,6 @@
     "typescript": "^5"
   },
   "optionalDependencies": {
-  "lightningcss": "^1.24.0"
-}
+    "lightningcss": "^1.24.0"
+  }
 }
