@@ -96,11 +96,22 @@ export default function OKRsPage() {
   const [filterAssignedTo, setFilterAssignedTo] = useState("");
   const [filterCreatedBy, setFilterCreatedBy] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  const activeFiltersCount = [filterDate, filterDepartment, filterCategory, filterQuarter, filterAssignedTo, filterCreatedBy, filterStatus].filter(Boolean).length;
-  const filterPanelRef = useRef<HTMLDivElement>(null);
   const [okrs, setOkrs] = useState<Okr[]>([]);
   const [archivedOkrs, setArchivedOkrs] = useState<Okr[]>([]);
   const [deletedOkrs, setDeletedOkrs] = useState<Okr[]>([]);
+  // Dynamically compute unique status options from all OKRs (All, Archived, Deleted)
+  const statusOptions = React.useMemo(() => {
+    const allStatuses = [...okrs, ...archivedOkrs, ...deletedOkrs]
+      .map(o => o.status)
+      .filter(Boolean)
+      .map(s => s.toString().trim())
+      .filter((v, i, arr) => arr.indexOf(v) === i)
+      .filter(v => !['active', 'archived', 'deleted'].includes(v.toLowerCase()));
+    // Sort for consistency, capitalize first letter for display
+    return allStatuses.sort((a, b) => a.localeCompare(b));
+  }, [okrs, archivedOkrs, deletedOkrs]);
+  const activeFiltersCount = [filterDate, filterDepartment, filterCategory, filterQuarter, filterAssignedTo, filterCreatedBy, filterStatus].filter(Boolean).length;
+  const filterPanelRef = useRef<HTMLDivElement>(null);
   const [sortBy, setSortBy] = useState("recent");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -380,8 +391,8 @@ export default function OKRsPage() {
     if (filterAssignedTo && !(okr.owner?.toLowerCase().includes(filterAssignedTo.toLowerCase()) || okr.keyResults?.some((kr: any) => kr.assignedTo?.some((a: string) => a.toLowerCase().includes(filterAssignedTo.toLowerCase()))))) return false;
     // Created by
     if (filterCreatedBy && !(okr.name?.toLowerCase().includes(filterCreatedBy.toLowerCase()))) return false;
-    // Status
-    if (filterStatus && okr.status !== filterStatus) return false;
+    // Status (normalize and compare case-insensitive)
+    if (filterStatus && okr.status && okr.status.toLowerCase().trim() !== filterStatus.toLowerCase().trim()) return false;
     return true;
   });
 
@@ -457,7 +468,7 @@ useEffect(() => {
       (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
       (!filterAssignedTo || (okr.owner && okr.owner.toLowerCase().includes(filterAssignedTo.toLowerCase()))) &&
       (!filterCreatedBy || (okr.name && (okr.name as string).toLowerCase().includes(filterCreatedBy.toLowerCase()))) &&
-      (!filterStatus || okr.status === filterStatus)
+      (!filterStatus || (okr.status && okr.status.toLowerCase().trim() === filterStatus.toLowerCase().trim()))
     );
   });
   const filteredDeletedOkrs: Okr[] = deletedOkrs.filter(okr => {
@@ -470,7 +481,7 @@ useEffect(() => {
     (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
     (!filterAssignedTo || (okr.owner && okr.owner.toLowerCase().includes(filterAssignedTo.toLowerCase()))) &&
     (!filterCreatedBy || (okr.name && (okr.name as string).toLowerCase().includes(filterCreatedBy.toLowerCase()))) &&
-    (!filterStatus || okr.status === filterStatus)
+    (!filterStatus || (okr.status && okr.status.toLowerCase().trim() === filterStatus.toLowerCase().trim()))
   );
 });
 
@@ -604,21 +615,29 @@ useEffect(() => {
                 aria-label="Filter by creator"
               />
             </div>
-            <div>
-              <label htmlFor="filter-status" className="block text-sm font-medium mb-1">Status</label>
-              <select
-                id="filter-status"
-                className="w-full rounded border px-3 py-2 transition-colors duration-150 hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
-                value={filterStatus}
-                onChange={e => setFilterStatus(e.target.value)}
-                aria-label="Filter by status"
-              >
-                <option className="cursor-pointer hover:bg-blue-50" value="">All Statuses</option>
-                <option className="cursor-pointer hover:bg-blue-50" value="On Track">On Track</option>
-                <option className="cursor-pointer hover:bg-blue-50" value="At Risk">At Risk</option>
-                <option className="cursor-pointer hover:bg-blue-50" value="Off Track">Off Track</option>
-              </select>
-            </div>
+            {tabValue === 'all' && (
+  <div>
+    <label htmlFor="filter-status" className="block text-sm font-medium mb-1">Status</label>
+    <select
+      id="filter-status"
+      className="w-full rounded border px-3 py-2 transition-colors duration-150 hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
+      value={filterStatus}
+      onChange={e => setFilterStatus(e.target.value)}
+      aria-label="Filter by status"
+    >
+      <option className="cursor-pointer hover:bg-blue-50" value="">All Statuses</option>
+      {statusOptions.map(status => (
+        <option
+          key={status}
+          className="cursor-pointer hover:bg-blue-50"
+          value={status}
+        >
+          {status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ')}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
           </div>
           <div className="flex justify-end gap-2 mt-2">
             <button
