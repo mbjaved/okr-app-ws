@@ -367,8 +367,10 @@ export default function OKRsPage() {
     )) return false;
     // Due date (endDate)
     if (filterDate && okr.endDate && okr.endDate !== filterDate) return false;
+    // Category
+    if (filterCategory && okr.category !== filterCategory) return false;
     // Department
-    if (filterDepartment && okr.category !== filterDepartment) return false;
+    if (filterDepartment && okr.department !== filterDepartment) return false;
     // Assigned to (owner or keyResults.assignedTo)
     if (filterAssignedTo && !(okr.owner?.toLowerCase().includes(filterAssignedTo.toLowerCase()) || okr.keyResults?.some((kr: any) => kr.assignedTo?.some((a: string) => a.toLowerCase().includes(filterAssignedTo.toLowerCase()))))) return false;
     // Created by
@@ -444,7 +446,7 @@ useEffect(() => {
     // Apply all filters as in applyAllFilters
     (search.trim() === '' || okr.objective.toLowerCase().includes(search.trim().toLowerCase()) || okr.description?.toLowerCase().includes(search.trim().toLowerCase()) || (typeof okr.name === 'string' && okr.name.toLowerCase().includes(search.trim().toLowerCase()))) &&
     (!filterDate || (okr.endDate && okr.endDate.startsWith(filterDate))) &&
-    (!filterDepartment || okr.category === filterDepartment) &&
+    (!filterCategory || okr.category === filterCategory) &&
     (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
     (!filterAssignedTo || (okr.owner && okr.owner.toLowerCase().includes(filterAssignedTo.toLowerCase()))) &&
     (!filterCreatedBy || (okr.name && (okr.name as string).toLowerCase().includes(filterCreatedBy.toLowerCase()))) &&
@@ -453,7 +455,7 @@ useEffect(() => {
   const filteredDeletedOkrs: Okr[] = deletedOkrs.filter(okr => okr.status === 'deleted' && (
     (search.trim() === '' || okr.objective.toLowerCase().includes(search.trim().toLowerCase()) || okr.description?.toLowerCase().includes(search.trim().toLowerCase()) || (typeof okr.name === 'string' && okr.name.toLowerCase().includes(search.trim().toLowerCase()))) &&
     (!filterDate || (okr.endDate && okr.endDate.startsWith(filterDate))) &&
-    (!filterDepartment || okr.category === filterDepartment) &&
+    (!filterCategory || okr.category === filterCategory) &&
     (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
     (!filterAssignedTo || (okr.owner && okr.owner.toLowerCase().includes(filterAssignedTo.toLowerCase()))) &&
     (!filterCreatedBy || (okr.name && (okr.name as string).toLowerCase().includes(filterCreatedBy.toLowerCase()))) &&
@@ -552,8 +554,8 @@ useEffect(() => {
                 aria-label="Filter by category"
               >
                 <option className="cursor-pointer hover:bg-blue-50" value="">All Categories</option>
-                <option className="cursor-pointer hover:bg-blue-50" value="Business">Business</option>
-                <option className="cursor-pointer hover:bg-blue-50" value="Technical">Technical</option>
+                <option className="cursor-pointer hover:bg-blue-50" value="Team">Team</option>
+                <option className="cursor-pointer hover:bg-blue-50" value="Individual">Individual</option>
                 {/* TODO: Populate dynamically */}
               </select>
             </div>
@@ -619,7 +621,7 @@ useEffect(() => {
               className="rounded px-4 py-2 bg-gray-100 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700 focus-visible:ring-2 focus-visible:ring-blue-400 text-gray-700 transition-colors duration-150 border border-gray-200"
               onClick={() => setFiltersOpen(false)}
             >
-              Close
+              Apply
             </button>
             <button
               type="button"
