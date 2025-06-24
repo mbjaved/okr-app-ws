@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import * as RadixTabs from '@radix-ui/react-tabs';
 import { Button } from "../../components/ui/button";
 import { Pagination } from "../../components/ui/pagination";
+import { MultiSelect, MultiSelectOption } from "../../components/ui/MultiSelect";
 import { OkrDialog } from "../../components/okr/OkrDialog";
 import { OkrTabPanel } from "../../components/okr/OkrTabPanel";
 import { EmptyState } from "../../components/okr/EmptyState";
@@ -27,7 +28,8 @@ interface OwnerData {
 
 interface Okr {
   _id: string;
-  createdBy?: string;
+  createdBy?: string; // always user ID for filtering
+  createdByName?: string; // for display only
   createdByAvatarUrl?: string;
   createdByInitials?: string;
   userId?: string;
@@ -47,7 +49,23 @@ interface Okr {
   // New multi-owner support
   owners?: OwnerData[];
   goalType?: string;
+  department?: string; // Added for filter compatibility
 }
+
+// Deduplicate and disambiguate user options for Created By MultiSelect
+const dedupedUserOptions = (allUsers: any[]) => {
+  const seen = new Map();
+  return allUsers.map(u => {
+    let label = u.name || u._id;
+    if (seen.has(label)) {
+      // Disambiguate duplicate names
+      label = `${label} (${u.email || u._id})`;
+    }
+    seen.set(label, true);
+    return { value: u._id, label, avatarUrl: u.avatarUrl };
+  });
+};
+
 
 // Simple Toast component for feedback
 // Accessible Toast component for robust UI feedback (Best_Practices.md)
@@ -94,7 +112,7 @@ export default function OKRsPage() {
   const [filterCategory, setFilterCategory] = useState("");
   const [filterQuarter, setFilterQuarter] = useState("");
   const [filterAssignedTo, setFilterAssignedTo] = useState("");
-  const [filterCreatedBy, setFilterCreatedBy] = useState("");
+  const [filterCreatedBy, setFilterCreatedBy] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState("");
   const [okrs, setOkrs] = useState<Okr[]>([]);
   const [archivedOkrs, setArchivedOkrs] = useState<Okr[]>([]);
@@ -110,7 +128,16 @@ export default function OKRsPage() {
     // Sort for consistency, capitalize first letter for display
     return allStatuses.sort((a, b) => a.localeCompare(b));
   }, [okrs, archivedOkrs, deletedOkrs]);
-  const activeFiltersCount = [filterDate, filterDepartment, filterCategory, filterQuarter, filterAssignedTo, filterCreatedBy, filterStatus].filter(Boolean).length;
+  // Only count filterCreatedBy if it has selected values
+const activeFiltersCount = [
+  filterDate,
+  filterDepartment,
+  filterCategory,
+  filterQuarter,
+  filterAssignedTo,
+  filterStatus,
+  ...(filterCreatedBy && filterCreatedBy.length > 0 ? [1] : [])
+].filter(Boolean).length;
   const filterPanelRef = useRef<HTMLDivElement>(null);
   const [sortBy, setSortBy] = useState("recent");
   const [loading, setLoading] = useState(true);
@@ -390,7 +417,8 @@ export default function OKRsPage() {
     // Assigned to (owner or keyResults.assignedTo)
     if (filterAssignedTo && !(okr.owner?.toLowerCase().includes(filterAssignedTo.toLowerCase()) || okr.keyResults?.some((kr: any) => kr.assignedTo?.some((a: string) => a.toLowerCase().includes(filterAssignedTo.toLowerCase()))))) return false;
     // Created by
-    if (filterCreatedBy && !(okr.name?.toLowerCase().includes(filterCreatedBy.toLowerCase()))) return false;
+    // Always treat filterCreatedBy as array of user IDs
+if (Array.isArray(filterCreatedBy) && filterCreatedBy.length > 0 && (!okr.createdBy || !filterCreatedBy.includes(okr.createdBy))) return false;
     // Status (normalize and compare case-insensitive)
     if (filterStatus && okr.status && okr.status.toLowerCase().trim() !== filterStatus.toLowerCase().trim()) return false;
     return true;
@@ -414,16 +442,17 @@ const fetchOkrs = async () => {
     setAllUsers(usersArr);
     // Enrich owners with user data
     const enrichedOkrs = okrs.map(okr => {
-      // Find creator user object
-      const creator = usersArr.find((u: any) => u._id === (okr.createdBy || okr.userId));
-      return {
-        ...okr,
-        owners: enrichOwnersWithUserData(okr.owners || [], usersArr),
-        createdBy: creator?.name || okr.createdBy || okr.userId || '',
-        createdByAvatarUrl: creator?.avatarUrl || '',
-        createdByInitials: creator?.name ? creator.name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase() : ''
-      };
-    });
+  // Find creator user object
+  const creator = usersArr.find((u: any) => u._id === (okr.createdBy || okr.userId));
+  return {
+    ...okr,
+    owners: enrichOwnersWithUserData(okr.owners || [], usersArr),
+    createdBy: creator?._id || okr.createdBy || okr.userId || '', // always user ID for filtering
+    createdByName: creator?.name || '', // for display
+    createdByAvatarUrl: creator?.avatarUrl || '',
+    createdByInitials: creator?.name ? creator.name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase() : ''
+  };
+});
     setOkrs(enrichedOkrs.filter(okr => okr.status !== 'archived' && okr.status !== 'deleted'));
     setArchivedOkrs(enrichedOkrs.filter(okr => okr.status === 'archived'));
     setDeletedOkrs(enrichedOkrs.filter(okr => okr.status === 'deleted'));
@@ -467,7 +496,7 @@ useEffect(() => {
       (!filterCategory || okr.category === filterCategory) &&
       (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
       (!filterAssignedTo || (okr.owner && okr.owner.toLowerCase().includes(filterAssignedTo.toLowerCase()))) &&
-      (!filterCreatedBy || (okr.name && (okr.name as string).toLowerCase().includes(filterCreatedBy.toLowerCase()))) &&
+      (filterCreatedBy.length === 0 || (okr.createdBy && filterCreatedBy.includes(okr.createdBy))) &&
       (!filterStatus || (okr.status && okr.status.toLowerCase().trim() === filterStatus.toLowerCase().trim()))
     );
   });
@@ -480,7 +509,7 @@ useEffect(() => {
     (!filterCategory || okr.category === filterCategory) &&
     (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
     (!filterAssignedTo || (okr.owner && okr.owner.toLowerCase().includes(filterAssignedTo.toLowerCase()))) &&
-    (!filterCreatedBy || (okr.name && (okr.name as string).toLowerCase().includes(filterCreatedBy.toLowerCase()))) &&
+    (filterCreatedBy.length === 0 || (okr.createdBy && filterCreatedBy.includes(okr.createdBy))) &&
     (!filterStatus || (okr.status && okr.status.toLowerCase().trim() === filterStatus.toLowerCase().trim()))
   );
 });
@@ -604,14 +633,14 @@ useEffect(() => {
               />
             </div>
             <div>
-              <label htmlFor="filter-created" className="block text-sm font-medium mb-1">Created by</label>
-              <input
-                id="filter-created"
-                type="text"
-                className="w-full rounded border px-3 py-2 transition-colors duration-150 hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
-                placeholder="Created by"
-                value={filterCreatedBy}
-                onChange={e => setFilterCreatedBy(e.target.value)}
+              <MultiSelect
+                options={dedupedUserOptions(allUsers)}
+                value={Array.isArray(filterCreatedBy) ? filterCreatedBy : []}
+                onChange={vals => setFilterCreatedBy(Array.isArray(vals) ? vals : [])}
+                placeholder="Select creators"
+                label="Created by"
+                isMulti={true}
+                className="w-full"
                 aria-label="Filter by creator"
               />
             </div>
@@ -656,7 +685,7 @@ useEffect(() => {
                 setFilterCategory("");
                 setFilterQuarter("");
                 setFilterAssignedTo("");
-                setFilterCreatedBy("");
+                setFilterCreatedBy([]);
                 setFilterStatus("");
               }}
             >
@@ -785,7 +814,7 @@ useEffect(() => {
             setDialogOpen(false);
             setEditOkr(null);
           }}
-          onSave={editOkr ? handleUpdateOkr : handleAddOkr}
+          onSave={editOkr ? (okr => handleUpdateOkr({ ...okr, status: (['on_track', 'off_track', 'at_risk', 'completed'].includes(okr.status) ? okr.status : undefined) as Okr['status'] })) : handleAddOkr}
           initialData={editOkr ? {
             ...editOkr,
             category: editOkr.category === 'Team' || editOkr.category === 'Individual' ? editOkr.category : undefined,
@@ -825,33 +854,32 @@ useEffect(() => {
           {loading && <div className="text-center py-8">Loading OKRs...</div>}
           {error && <div className="text-center text-red-500 py-8">{error}</div>}
 
-          <div className="focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400" tabIndex={0} aria-label="OKR List">
-            <div className="flex flex-col gap-4">
-              {filteredOkrs.slice((currentPageAll - 1) * OKRS_PER_PAGE, currentPageAll * OKRS_PER_PAGE).map((okr) => (
-                <div key={okr._id} className="relative">
-                  <OkrCard
-                    objective={okr.objective}
-                    dueDate={okr.endDate ? okr.endDate.slice(0, 10) : "-"}
-                    status={okr.status}
-                    keyResults={okr.keyResults}
-                    lastUpdated={okr.updatedAt?.slice(0, 10) || "-"}
-                    owners={okr.owners || []}
-                    description={okr.description}
-                    createdBy={okr.createdBy}
-                    createdByAvatarUrl={okr.createdByAvatarUrl}
-                    createdByInitials={okr.createdByInitials}
-                    goalType={okr.goalType}
-                    {...(console.debug('[OkrCard owners]', okr.owners), {})}
-                  />
-                  <div className="absolute top-2 right-2">
-                    <OkrCardMenu
-                      status={okr.status as 'active' | 'archived' | 'deleted'}
-                      onEdit={() => handleEditOkr(okr)}
-                      onDuplicate={() => handleDuplicateOkr(okr)}
-                      onArchive={okr.status === 'active' ? () => handleUpdateOkr({ ...okr, status: 'archived' }, okr.status) : okr.status === 'archived' ? () => handleDeleteOkr(okr) : undefined}
-                      onRestore={okr.status === 'deleted' ? () => handleUpdateOkr({ ...okr, status: 'active' }, okr.status) : undefined}
-                      onHardDelete={okr.status === 'deleted' ? () => handleDeleteOkr(okr) : undefined}
+            <div className="focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400" tabIndex={0} aria-label="OKR List">
+              <div className="flex flex-col gap-4">
+                {filteredOkrs.slice((currentPageAll - 1) * OKRS_PER_PAGE, currentPageAll * OKRS_PER_PAGE).map((okr) => (
+                  <div key={okr._id} className="relative">
+                    <OkrCard
+                      objective={okr.objective}
+                      dueDate={okr.endDate ? okr.endDate.slice(0, 10) : "-"}
+                      status={okr.status}
+                      keyResults={okr.keyResults}
+                      lastUpdated={okr.updatedAt?.slice(0, 10) || "-"}
+                      owners={okr.owners || []}
+                      description={okr.description}
+                      createdBy={okr.createdByName}
+                      createdByAvatarUrl={okr.createdByAvatarUrl}
+                      createdByInitials={okr.createdByInitials}
+                      goalType={okr.goalType}
                     />
+                    <div className="absolute top-2 right-2">
+                      <OkrCardMenu
+                        status={okr.status as 'active' | 'archived' | 'deleted'}
+                        onEdit={() => handleEditOkr(okr)}
+                        onDuplicate={() => handleDuplicateOkr(okr)}
+                        onArchive={okr.status === 'active' ? () => handleUpdateOkr({ ...okr, status: 'archived' }, okr.status) : okr.status === 'archived' ? () => handleDeleteOkr(okr) : undefined}
+                        onRestore={okr.status === 'deleted' ? () => handleUpdateOkr({ ...okr, status: 'active' }, okr.status) : undefined}
+                        onHardDelete={okr.status === 'deleted' ? () => handleDeleteOkr(okr) : undefined}
+                      />
                   </div>
                 </div>
               ))}
