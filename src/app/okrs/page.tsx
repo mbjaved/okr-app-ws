@@ -5,6 +5,7 @@
 
 // Import order: React, third-party, then local components (Best_Practices.md)
 import React, { useState, useRef, useEffect } from "react";
+import { DatePickerFilter } from "./DatePickerFilter";
 import { enrichOwnersWithUserData } from "../../lib/enrichOwnersWithUserData";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -366,7 +367,11 @@ export default function OKRsPage() {
       okr.description?.toLowerCase().includes(searchTerm)
     )) return false;
     // Due date (endDate)
-    if (filterDate && okr.endDate && okr.endDate !== filterDate) return false;
+    // Normalize endDate to YYYY-MM-DD for comparison
+    if (filterDate) {
+      const normalizedEndDate = okr.endDate ? new Date(okr.endDate).toISOString().slice(0, 10) : '';
+      if (!normalizedEndDate || normalizedEndDate !== filterDate) return false;
+    }
     // Category
     if (filterCategory && okr.category !== filterCategory) return false;
     // Department
@@ -442,25 +447,32 @@ useEffect(() => {
 // ... rest of the code remains the same ...
 
   // Timeline log: 2025-06-20, Filter logic unified for all OKR tabs (see DEVELOPMENT_TIMELINE.md)
-  const filteredArchivedOkrs: Okr[] = archivedOkrs.filter(okr => okr.status === 'archived' && (
-    // Apply all filters as in applyAllFilters
+  const filteredArchivedOkrs: Okr[] = archivedOkrs.filter(okr => {
+    // Normalize endDate to YYYY-MM-DD (handles ISO, date string, etc)
+    const normalizedEndDate = okr.endDate ? new Date(okr.endDate).toISOString().slice(0, 10) : '';
+    return okr.status === 'archived' && (
+      (search.trim() === '' || okr.objective.toLowerCase().includes(search.trim().toLowerCase()) || okr.description?.toLowerCase().includes(search.trim().toLowerCase()) || (typeof okr.name === 'string' && okr.name.toLowerCase().includes(search.trim().toLowerCase()))) &&
+      (!filterDate || (normalizedEndDate && normalizedEndDate === filterDate)) &&
+      (!filterCategory || okr.category === filterCategory) &&
+      (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
+      (!filterAssignedTo || (okr.owner && okr.owner.toLowerCase().includes(filterAssignedTo.toLowerCase()))) &&
+      (!filterCreatedBy || (okr.name && (okr.name as string).toLowerCase().includes(filterCreatedBy.toLowerCase()))) &&
+      (!filterStatus || okr.status === filterStatus)
+    );
+  });
+  const filteredDeletedOkrs: Okr[] = deletedOkrs.filter(okr => {
+  // Normalize endDate to YYYY-MM-DD (handles ISO, date string, etc)
+  const normalizedEndDate = okr.endDate ? new Date(okr.endDate).toISOString().slice(0, 10) : '';
+  return okr.status === 'deleted' && (
     (search.trim() === '' || okr.objective.toLowerCase().includes(search.trim().toLowerCase()) || okr.description?.toLowerCase().includes(search.trim().toLowerCase()) || (typeof okr.name === 'string' && okr.name.toLowerCase().includes(search.trim().toLowerCase()))) &&
-    (!filterDate || (okr.endDate && okr.endDate.startsWith(filterDate))) &&
+    (!filterDate || (normalizedEndDate && normalizedEndDate === filterDate)) &&
     (!filterCategory || okr.category === filterCategory) &&
     (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
     (!filterAssignedTo || (okr.owner && okr.owner.toLowerCase().includes(filterAssignedTo.toLowerCase()))) &&
     (!filterCreatedBy || (okr.name && (okr.name as string).toLowerCase().includes(filterCreatedBy.toLowerCase()))) &&
     (!filterStatus || okr.status === filterStatus)
-  ));
-  const filteredDeletedOkrs: Okr[] = deletedOkrs.filter(okr => okr.status === 'deleted' && (
-    (search.trim() === '' || okr.objective.toLowerCase().includes(search.trim().toLowerCase()) || okr.description?.toLowerCase().includes(search.trim().toLowerCase()) || (typeof okr.name === 'string' && okr.name.toLowerCase().includes(search.trim().toLowerCase()))) &&
-    (!filterDate || (okr.endDate && okr.endDate.startsWith(filterDate))) &&
-    (!filterCategory || okr.category === filterCategory) &&
-    (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
-    (!filterAssignedTo || (okr.owner && okr.owner.toLowerCase().includes(filterAssignedTo.toLowerCase()))) &&
-    (!filterCreatedBy || (okr.name && (okr.name as string).toLowerCase().includes(filterCreatedBy.toLowerCase()))) &&
-    (!filterStatus || okr.status === filterStatus)
-  ));
+  );
+});
 
   return (
     <main className="container mx-auto p-4 md:p-6 space-y-6">
@@ -519,14 +531,7 @@ useEffect(() => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label htmlFor="filter-date" className="block text-sm font-medium mb-1">Due Date</label>
-              <input
-                id="filter-date"
-                type="date"
-                className="w-full rounded border px-3 py-2 transition-colors duration-150 hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
-                value={filterDate}
-                onChange={e => setFilterDate(e.target.value)}
-                aria-label="Filter by due date"
-              />
+              <DatePickerFilter value={filterDate} onChange={setFilterDate} />
             </div>
             <div>
               <label htmlFor="filter-department" className="block text-sm font-medium mb-1">Department</label>
