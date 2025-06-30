@@ -2,6 +2,10 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { computeOkrStats } from './okrStatsFromOkrs';
+import { enrichOwnersWithUserData } from '../../lib/enrichOwnersWithUserData';
+import type { Okr } from './okrSelectors';
+import { selectOverdueOkrs } from './okrInsights';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -81,6 +85,8 @@ export default function DashboardPage() {
   // router is not used
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [okrs, setOkrs] = useState<Okr[]>([]); // Holds all OKRs for stats calculation
+  const [users, setUsers] = useState<{ _id: string; name?: string; avatarUrl?: string }[]>([]); // For avatar enrichment
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [initialLoad, setInitialLoad] = useState(true);
@@ -97,8 +103,56 @@ export default function DashboardPage() {
       setError(null);
       // Only show loading indicator if not a refresh
       if (!isRefreshing) setLoading(true);
-      
-      console.log('Fetching dashboard data...');
+
+      // Fetch all OKRs for stats
+      const okrsRes = await fetch('/api/okrs', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        cache: 'no-store' as RequestCache
+      });
+      if (!okrsRes.ok) throw new Error('Failed to fetch OKRs');
+      const okrsRaw = await okrsRes.json();
+
+      // Fetch users for avatar enrichment, as in OKRsPage
+      const usersRes = await fetch('/api/users');
+      if (!usersRes.ok) throw new Error('Failed to fetch users');
+      const usersArr = await usersRes.json();
+
+      setUsers(usersArr);
+      // Enrich owners and filter out archived/deleted (match OKRsPage logic)
+      const enrichedOkrs = (Array.isArray(okrsRaw.okrs) ? okrsRaw.okrs : Array.isArray(okrsRaw) ? okrsRaw : []).map((okr: any) => {
+        // Find creator user object
+        const creator = usersArr.find((u: any) => u._id === (okr.createdBy || okr.userId));
+        return {
+          ...okr,
+          owners: (okr.owners && okr.owners.length > 0)
+            ? okr.owners.map((owner: any) => {
+                if (typeof owner === 'string') {
+                  const user = usersArr.find((u: any) => u._id === owner);
+                  return user ? { _id: user._id, name: user.name, avatarUrl: user.avatarUrl } : { _id: owner };
+                }
+                // Already an object
+                if (owner && owner._id) {
+                  const user = usersArr.find((u: any) => u._id === owner._id);
+                  return user ? { ...owner, name: user.name, avatarUrl: user.avatarUrl } : owner;
+                }
+                return owner;
+              })
+            : [],
+          createdBy: creator?._id || okr.createdBy || okr.userId || '',
+          createdByName: creator?.name || '',
+          createdByAvatarUrl: creator?.avatarUrl || '',
+          createdByInitials: creator?.name ? creator.name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase() : ''
+        };
+      });
+      const filteredOkrs = enrichedOkrs.filter((okr: any) => okr.status !== 'archived' && okr.status !== 'deleted');
+      setOkrs(filteredOkrs);
+
+      // Compute stats using selectors utility
+      const okrStats: OkrStats = computeOkrStats(filteredOkrs);
+
+      // Fetch dashboard data for other sections (deadlines, activity, user info)
       const response = await fetch('/api/dashboard', {
         method: 'GET',
         headers: { 
@@ -146,7 +200,10 @@ export default function DashboardPage() {
         }
       }
       
-      setDashboardData(data);
+      setDashboardData({
+  ...data,
+  okrStats // Replace stats with selector-based calculation
+});
       
       if (isRefreshing) {
         toast.success('Dashboard updated');
@@ -312,6 +369,8 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {/* Stats widgets always at top */}
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total OKRs</CardTitle>
@@ -379,8 +438,89 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+     {/* Overdue OKRs Widget now below stats row */}
+      {okrs && okrs.length > 0 && (
+        <Card className="mb-6 bg-white border border-neutral-200 shadow-sm">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-lg font-semibold text-red-600 flex items-center gap-2">
+                <AlertCircle className="inline-block h-5 w-5 text-red-500" />
+                Overdue OKRs
+              </CardTitle>
+              <CardDescription className="text-sm mt-1 text-muted-foreground">
+                These OKRs are past their due date and need immediate attention.
+              </CardDescription>
+            </div>
+            <div className="rounded-full bg-neutral-100 text-neutral-700 px-3 py-1 text-sm font-bold border border-neutral-200">
+              {selectOverdueOkrs(okrs).length} overdue
+            </div>
+          </CardHeader>
+          <CardContent>
+            {selectOverdueOkrs(okrs).length === 0 ? (
+              <div className="text-muted-foreground text-center py-4">No overdue OKRs!</div>
+            ) : (
+              <ul className="space-y-3">
+                {selectOverdueOkrs(okrs)
+                  .sort((a, b) => new Date(a.endDate || '').getTime() - new Date(b.endDate || '').getTime())
+                  .slice(0, 5)
+                  .map(okr => {
+                    // Enrich all owners for this OKR
+                    const enrichedOwners = enrichOwnersWithUserData(okr.owners || [], users);
+                    return (
+                      <li key={okr._id} className="flex items-center justify-between bg-neutral-50 rounded-lg px-4 py-3 border border-neutral-100">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* All owner avatars */}
+                          <div className="flex -space-x-2">
+                            {enrichedOwners.length > 0 ? (
+                              enrichedOwners.map((owner, idx) => {
+                                const initials = owner?.name && owner.name !== 'User'
+                                  ? owner.name.split(' ').map(n => n[0]).join('').slice(0,2).toUpperCase()
+                                  : 'U';
+                                return owner.avatarUrl ? (
+                                  <img
+                                    key={owner._id + idx}
+                                    src={owner.avatarUrl}
+                                    alt={owner.name || 'Owner'}
+                                    className="h-8 w-8 rounded-full object-cover border-2 border-white shadow"
+                                  />
+                                ) : (
+                                  <div
+                                    key={owner._id + idx}
+                                    className="h-8 w-8 rounded-full bg-neutral-200 flex items-center justify-center text-neutral-700 font-bold border-2 border-white shadow"
+                                  >
+                                    {initials}
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="h-8 w-8 rounded-full bg-neutral-200 flex items-center justify-center text-neutral-700 font-bold border-2 border-white shadow">
+                                U
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-medium truncate text-base text-neutral-900">{okr.objective}</div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              Owner{enrichedOwners.length !== 1 ? 's' : ''}: {enrichedOwners.length > 0 ? enrichedOwners.map(o => o.name && o.name !== 'User' ? o.name : 'Unassigned').join(', ') : 'Unassigned'}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="inline-flex items-center px-2 py-1 rounded bg-neutral-100 text-neutral-700 text-xs font-semibold border border-neutral-200">
+                            Due {okr.endDate ? new Date(okr.endDate).toLocaleDateString() : 'N/A'}
+                          </span>
+                        </div>
+                      </li>
+                    );
+                  })}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
+        <Card className="lg:col-span-4 bg-white border border-neutral-200 shadow-sm">
           <CardHeader>
             <CardTitle>Upcoming Deadlines</CardTitle>
             <CardDescription>
@@ -391,21 +531,21 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {dashboardData.upcomingDeadlines.length > 0 ? (
-              <div className="space-y-4">
+              <ul className="space-y-3">
                 {dashboardData.upcomingDeadlines.map((deadline, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{deadline.objective}</p>
-                      <p className="text-sm text-muted-foreground">
+                  <li key={index} className="flex items-center justify-between bg-neutral-50 rounded-lg px-4 py-3 border border-neutral-100">
+                    <div className="min-w-0">
+                      <div className="font-medium truncate text-base text-neutral-900">{deadline.objective}</div>
+                      <div className="text-xs text-muted-foreground truncate">
                         Due {new Date(deadline.dueDate).toLocaleDateString()}
-                      </p>
+                      </div>
                     </div>
-                    <Badge color={getStatusBadgeVariant(deadline.status)}>
+                    <span className="inline-flex items-center px-2 py-1 rounded bg-neutral-100 text-neutral-700 text-xs font-semibold border border-neutral-200">
                       {formatStatus(deadline.status)}
-                    </Badge>
-                  </div>
+                    </span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             ) : (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Clock className="h-12 w-12 text-muted-foreground mb-2" />
@@ -415,7 +555,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-3">
+        <Card className="lg:col-span-3 bg-white border border-neutral-200 shadow-sm">
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
             <CardDescription>
@@ -426,33 +566,33 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {dashboardData.recentActivity.length > 0 ? (
-              <div className="space-y-4">
+              <ul className="space-y-3">
                 {dashboardData.recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start gap-3">
+                  <li key={index} className="flex items-start gap-3 bg-neutral-50 rounded-lg px-4 py-3 border border-neutral-100">
                     <div className="flex-shrink-0">
                       {activity.user?.avatarUrl ? (
                         <img
                           src={activity.user.avatarUrl}
                           alt={activity.user.name || 'User'}
-                          className="h-8 w-8 rounded-full object-cover"
+                          className="h-8 w-8 rounded-full object-cover border-2 border-white shadow"
                         />
                       ) : (
-                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                          <span className="text-xs font-medium">
+                        <div className="h-8 w-8 rounded-full bg-neutral-200 flex items-center justify-center">
+                          <span className="text-xs font-medium text-neutral-700">
                             {activity.user?.name?.charAt(0) || 'U'}
                           </span>
                         </div>
                       )}
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{activity.message}</p>
-                      <p className="text-xs text-muted-foreground">
+                    <div className="space-y-1 min-w-0">
+                      <div className="font-medium truncate text-neutral-900 text-sm">{activity.message}</div>
+                      <div className="text-xs text-muted-foreground truncate">
                         {new Date(activity.timestamp).toLocaleString()}
-                      </p>
+                      </div>
                     </div>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             ) : (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Clock className="h-12 w-12 text-muted-foreground mb-2" />
