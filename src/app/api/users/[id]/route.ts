@@ -6,7 +6,8 @@ import { ObjectId } from "mongodb";
 
 // Best_Practices.md: Use 'context: any' for Next.js App Router API handlers to avoid type constraint errors
 export async function GET(req: NextRequest, context: any) {
-  const { id } = context.params;
+  const params = await context.params;
+  const { id } = params;
   if (!id || id.length < 8) {
     return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
   }

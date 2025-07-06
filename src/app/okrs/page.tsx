@@ -5,6 +5,7 @@
 
 // Import order: React, third-party, then local components (Best_Practices.md)
 import React, { useState, useRef, useEffect } from "react";
+import { useSearchParams } from 'next/navigation';
 import { DatePickerFilter } from "./DatePickerFilter";
 import { enrichOwnersWithUserData } from "../../lib/enrichOwnersWithUserData";
 import { useSession } from "next-auth/react";
@@ -15,9 +16,9 @@ import { Pagination } from "../../components/ui/pagination";
 import { MultiSelect, MultiSelectOption } from "../../components/ui/MultiSelect";
 import { OkrDialog } from "../../components/okr/OkrDialog";
 import { OkrTabPanel } from "../../components/okr/OkrTabPanel";
-import { EmptyState } from "../../components/okr/EmptyState";
 import { OkrCard } from "../../components/okr/OkrCard";
 import { OkrCardMenu } from "../../components/okr/OkrCardMenu";
+import { ConfirmModal } from "../../components/ui/ConfirmModal";
 
 // Typed contracts for OKR entity (Best_Practices.md)
 interface OwnerData {
@@ -83,7 +84,26 @@ function Toast({ message, type, onClose }: { message: string; type: "success" | 
   );
 }
 
+// Utility: Generate a slug from an OKR objective or name
+function generateSlug(text: string): string {
+  return (text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-') // replace non-alphanum with dash
+    .replace(/^-+|-+$/g, '')     // trim leading/trailing dashes
+    .slice(0, 50);               // limit length if needed
+}
+
 export default function OKRsPage() {
+  // Use Next.js useSearchParams for tab param
+  const searchParams = useSearchParams();
+  const tabParam = searchParams?.get('tab') || 'all';
+  const [tab, setTab] = useState(tabParam);
+
+  // Keep tab state in sync with the URL param
+  useEffect(() => {
+    if (tab !== tabParam) setTab(tabParam);
+  }, [tabParam]);
+
   // --- Auth Handling (Best_Practices.md: always render full tree; handle auth inside component) ---
   const router = useRouter();
   const { data: session, status } = useSession({
@@ -200,12 +220,17 @@ const activeFiltersCount = [
   };
 
   // Add OKR
+  // Always generate a slug for new OKR before POST
   const handleAddOkr = async (okr: any) => {
+    // Generate a slug from the objective or name
+    const slug = generateSlug(okr.objective || okr.name || 'okr');
+    const okrWithSlug = { ...okr, slug };
+
     try {
       const res = await fetch("/api/okrs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(okr)
+        body: JSON.stringify(okrWithSlug)
       });
       const created = await res.json();
       if (!res.ok) {
@@ -227,7 +252,11 @@ const activeFiltersCount = [
   };
 
   // Update OKR
-  const handleUpdateOkr = async (okr: any, prevStatus?: string) => {
+  // Always generate a slug for OKR before PUT (update)
+const handleUpdateOkr = async (okr: any, prevStatus?: string) => {
+  const slug = generateSlug(okr.objective || okr.name || 'okr');
+  const okrWithSlug = { ...okr, slug };
+
     if (!okr._id) {
       setToast({ message: "Invalid OKR: missing ID.", type: "error" });
       return;
@@ -236,7 +265,7 @@ const activeFiltersCount = [
       const res = await fetch(`/api/okrs/${okr._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(okr)
+        body: JSON.stringify(okrWithSlug)
       });
       const resData = await res.json();
       if (!res.ok) {
@@ -450,8 +479,14 @@ const fetchOkrs = async () => {
     const enrichedOkrs = okrs.map(okr => {
   // Find creator user object
   const creator = usersArr.find((u: any) => u._id === (okr.createdBy || okr.userId));
+  // Patch: Ensure every OKR has a valid slug for navigation
+  let slug = okr.slug;
+  if (!slug || typeof slug !== 'string' || !slug.trim()) {
+    slug = generateSlug(okr.objective || okr.name || 'okr');
+  }
   return {
     ...okr,
+    slug,
     owners: enrichOwnersWithUserData(okr.owners || [], usersArr),
     createdBy: creator?._id || okr.createdBy || okr.userId || '', // always user ID for filtering
     createdByName: creator?.name || '', // for display
@@ -706,111 +741,45 @@ useEffect(() => {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       {/* Soft Delete Confirmation Modal (Archived Tab) */}
       {deleteConfirm.open && deleteConfirm.okr && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-okr-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
-          tabIndex={-1}
-          onKeyDown={e => {
-            if (e.key === 'Escape') setDeleteConfirm({ okr: null, open: false, confirmText: '' });
+        <ConfirmModal
+          open={deleteConfirm.open}
+          title={deleteConfirm.okr.status === 'deleted' ? 'Permanently Delete OKR?' : 'Delete OKR?'}
+          message={
+            deleteConfirm.okr.status === 'deleted'
+              ? (
+                  <>
+                    Are you sure you want to <b>permanently delete</b> <span className="font-semibold">{deleteConfirm.okr.objective}</span>? <b>This action cannot be undone.</b>
+                  </>
+                )
+              : (
+                  <>
+                    Are you sure you want to delete <span className="font-semibold">{deleteConfirm.okr.objective}</span>? You can restore this OKR later from the Deleted tab.
+                  </>
+                )
+          }
+          confirmText={deleteConfirm.okr && deleteConfirm.okr.status === 'deleted' && typeof deleteConfirm.okr.objective === 'string' && deleteConfirm.okr.objective.length > 0 ? deleteConfirm.okr.objective : undefined}
+          confirmPlaceholder={deleteConfirm.okr && deleteConfirm.okr.status === 'deleted' ? deleteConfirm.okr.objective : undefined}
+          confirmButtonLabel={deleteConfirm.okr && deleteConfirm.okr.status === 'deleted' ? 'Permanently Delete' : 'Delete'}
+          confirmButtonClass={'bg-red-600 hover:bg-red-700'}
+          warning={!!(deleteConfirm.okr && deleteConfirm.okr.status === 'deleted')}
+          onCancel={() => setDeleteConfirm({ okr: null, open: false, confirmText: '' })}
+          onConfirm={async () => {
+            if (deleteConfirm.okr && deleteConfirm.okr.status === 'deleted') {
+              try {
+                const res = await fetch(`/api/okrs/${deleteConfirm.okr._id}?hard=true`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to hard delete OKR');
+                setToast({ message: 'OKR permanently deleted.', type: 'success' });
+                setDeleteConfirm({ okr: null, open: false, confirmText: '' });
+                setDeletedOkrs(prev => prev.filter(okr => okr._id !== deleteConfirm.okr?._id));
+              } catch (err: any) {
+                setToast({ message: err.message || 'Failed to hard delete OKR', type: 'error' });
+              }
+            } else {
+              confirmDeleteOkr();
+            }
           }}
-        >
-          <div className={`bg-white rounded-lg shadow-lg p-6 w-full max-w-sm flex flex-col gap-4 focus:outline-none ${deleteConfirm.okr.status === 'deleted' ? 'border-2 border-yellow-300' : ''}`} tabIndex={0}>
-            {/* Modal header and icon */}
-            {deleteConfirm.okr.status === 'deleted' ? (
-              <div className="flex items-center gap-3 mb-1">
-                <svg className="w-8 h-8 text-yellow-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10" fill="#FEF3C7" />
-                  <path d="M12 8v4" stroke="#F59E42" strokeWidth="2" strokeLinecap="round" />
-                  <circle cx="12" cy="16" r="1" fill="#F59E42" />
-                </svg>
-                <h2 id="delete-okr-title" className="text-lg font-bold text-yellow-900">Permanently Delete OKR?</h2>
-              </div>
-            ) : (
-              <h2 id="delete-okr-title" className="text-lg font-bold text-gray-900">Delete OKR?</h2>
-            )}
-            {/* Modal body */}
-            {deleteConfirm.okr.status === 'deleted' ? (
-              <>
-                <p className="text-yellow-900 bg-yellow-50 rounded px-3 py-2 border border-yellow-200">
-                  Are you sure you want to <b>permanently delete</b> <span className="font-semibold">{deleteConfirm.okr.objective}</span>? <b>This action cannot be undone.</b>
-                </p>
-                <div className="flex flex-col gap-2 w-full">
-                  <label htmlFor="hard-delete-confirm" className="text-sm text-gray-700">
-                    Please type <span className="font-semibold">{deleteConfirm.okr.objective}</span> to confirm permanent deletion:
-                  </label>
-                  <input
-                    id="hard-delete-confirm"
-                    type="text"
-                    className="border border-yellow-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                    placeholder={deleteConfirm.okr.objective}
-                    value={deleteConfirm.confirmText || ''}
-                    onChange={e => setDeleteConfirm(dc => ({ ...dc, confirmText: e.target.value }))}
-                    aria-label={`Type ${deleteConfirm.okr.objective} to confirm deletion`}
-                    autoFocus
-                  />
-                  <div className="flex justify-end gap-2 mt-4">
-                    <button
-                      className="px-4 py-2 rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors"
-                      onClick={() => setDeleteConfirm({ okr: null, open: false, confirmText: '' })}
-                      type="button"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className={`px-4 py-2 rounded text-white font-semibold focus:outline-none focus:ring-2 focus:ring-red-400 transition-colors ${deleteConfirm.confirmText === deleteConfirm.okr.objective ? 'bg-red-600 hover:bg-red-700' : 'bg-red-300 cursor-not-allowed'}`}
-                      disabled={deleteConfirm.confirmText !== deleteConfirm.okr.objective}
-                      onClick={async () => {
-                        if (!deleteConfirm.okr || deleteConfirm.confirmText !== deleteConfirm.okr.objective) return;
-                        try {
-                          const res = await fetch(`/api/okrs/${deleteConfirm.okr._id}?hard=true`, { method: 'DELETE' });
-                          const data = await res.json();
-                          if (!res.ok) throw new Error(data.error || 'Failed to hard delete OKR');
-                          setToast({ message: 'OKR permanently deleted.', type: 'success' });
-                          setDeleteConfirm({ okr: null, open: false, confirmText: '' });
-                          setDeletedOkrs(prev => prev.filter(okr => okr._id !== deleteConfirm.okr?._id));
-                        } catch (err: any) {
-                          setToast({ message: err.message || 'Failed to hard delete OKR', type: 'error' });
-                        }
-                      }}
-                      title="Permanently delete this OKR (irreversible)"
-                      aria-label="Hard delete OKR"
-                      type="button"
-                    >
-                      Hard Delete
-                    </button>
-                  </div>
-                  {deleteConfirm.confirmText && deleteConfirm.confirmText !== deleteConfirm.okr.objective && (
-                    <span className="text-xs text-red-500 mt-2">Name does not match. Please type the OKR name exactly.</span>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="text-gray-700">
-                  Are you sure you want to delete <span className="font-semibold">{deleteConfirm.okr.objective}</span>? <b>You can restore it later from the Deleted OKRs tab.</b>
-                </p>
-                <div className="flex justify-end gap-2 mt-4">
-                  <button
-                    className="px-4 py-2 rounded bg-gray-200 text-gray-800 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    onClick={() => setDeleteConfirm({ okr: null, open: false })}
-                    autoFocus
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400"
-                    onClick={confirmDeleteOkr}
-                    aria-label="Soft delete OKR"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+        />
       )}
 
       {/* Dialog for Add/Edit OKR */}
@@ -830,7 +799,7 @@ useEffect(() => {
       )}
       {/* Main page content starts here */}
       {/* Timeline log: Refactored to use Radix UI Tabs for accessibility, modularity, and robust feedback (2025-05-23, see DEVELOPMENT_TIMELINE.md) */}
-      <RadixTabs.Root value={tabValue} onValueChange={(val: string) => setTabValue(val as 'all' | 'archived' | 'deleted')} className="w-full">
+      <RadixTabs.Root value={tab} onValueChange={setTab} className="w-full">
         <RadixTabs.List
           className="flex gap-2 mb-6 px-2 py-1 bg-white border border-gray-200 rounded-xl shadow-sm"
           aria-label="OKRs Tabs"
@@ -877,6 +846,8 @@ useEffect(() => {
                       createdByAvatarUrl={okr.createdByAvatarUrl}
                       createdByInitials={okr.createdByInitials}
                       goalType={okr.goalType}
+                      slug={okr.slug || ''}  // TODO: Enforce slug presence at data/model layer
+                      _id={okr._id || ''}    // TODO: Enforce _id presence at data/model layer
                     />
                     <div className="absolute top-2 right-2">
                       <OkrCardMenu

@@ -324,10 +324,11 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
           <label className="flex flex-col gap-1">
             <span>Category</span>
             <select
-              className="border rounded px-3 py-2"
+              className="border rounded px-2 py-1 w-full cursor-pointer"
               value={category}
               onChange={e => setCategory(e.target.value as "Individual" | "Team")}
-              style={{ color: category ? '#000C2C' : '#B3BCC5' }}
+              aria-invalid={!!errors.category}
+              aria-describedby={errors.category ? 'category-error' : undefined}
             >
               <option value="Individual">Individual</option>
               <option value="Team">Team</option>
@@ -336,10 +337,11 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
           <label className="flex flex-col gap-1">
             <span>Status</span>
             <select
-              className="border rounded px-3 py-2"
+              className="border rounded px-2 py-1 w-full cursor-pointer"
               value={status}
               onChange={e => setStatus(e.target.value as "on_track" | "at_risk" | "off_track" | "completed")}
-              style={{ color: status ? '#000C2C' : '#B3BCC5' }}
+              aria-invalid={!!errors.status}
+              aria-describedby={errors.status ? 'status-error' : undefined}
             >
               <option value="on_track">On Track</option>
               <option value="at_risk">At Risk</option>
@@ -352,7 +354,7 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
               <span>Start Date <span className="text-red-500">*</span></span>
               <input
                 type="date"
-                className={`border rounded px-3 py-2 ${errors.startDate ? 'border-red-500' : ''}`}
+                className="border rounded px-2 py-1 w-full cursor-pointer"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
                 aria-invalid={!!errors.startDate}
@@ -366,7 +368,7 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
               <span>End Date <span className="text-red-500">*</span></span>
               <input
                 type="date"
-                className={`border rounded px-3 py-2 ${errors.endDate ? 'border-red-500' : ''}`}
+                className="border rounded px-2 py-1 w-full cursor-pointer"
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
                 aria-invalid={!!errors.endDate}
@@ -380,7 +382,7 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="font-semibold">Key Results</span>
-              <Button type="button" variant="secondary" onClick={handleAddKR}>Add Key Result</Button>
+              <Button type="button" variant="secondary" onClick={handleAddKR} className="cursor-pointer">Add Key Result</Button>
             </div>
             <div className="flex flex-col gap-2">
               {keyResults.map((kr, idx) => (
@@ -393,7 +395,7 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
                   />
                   <div className="flex gap-2 items-end">
                     <select
-                      className="border rounded px-2 py-1"
+                      className="border rounded px-2 py-1 cursor-pointer"
                       value={kr.type || 'percent'}
                       onChange={e => handleKRChange(idx, "type", e.target.value)}
                     >
@@ -446,8 +448,8 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
             </div>
           </div>
           <footer className="sticky bottom-0 bg-white border-t flex justify-end gap-4 p-4">
-            <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
-            <Button variant="primary" type="submit" disabled={saving}>
+            <Button variant="secondary" type="button" onClick={onClose} className="cursor-pointer">Cancel</Button>
+            <Button variant="primary" type="submit" disabled={saving} className={saving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}>
               {saving ? 'Saving...' : 'Save OKR'}
             </Button>
           </footer>

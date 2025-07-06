@@ -83,24 +83,49 @@ async function getUserId() {
 // Best_Practices.md: Typed API contracts for Next.js Route Handlers
 // Best_Practices.md: Use 'context: any' for Next.js App Router API handlers to avoid type constraint errors
 export async function GET(req: NextRequest, context: any) {
-  const { params } = context;
+  const params = await context.params;
+  // Debug logging for incoming params
+  console.log('[API /api/okrs/[okrId] GET]', { params });
   if (!params || !params.okrId || typeof params.okrId !== 'string') {
+    console.error('[API ERROR] Invalid OKR ID param', { params });
     return NextResponse.json({ error: "Invalid OKR ID" }, { status: 400 });
   }
   let okrObjectId;
   try {
     okrObjectId = new ObjectId(params.okrId);
   } catch (e) {
+    console.error('[API ERROR] Malformed OKR ID', { okrId: params.okrId, error: e });
     return NextResponse.json({ error: "Malformed OKR ID" }, { status: 400 });
   }
   const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId) {
+    console.error('[API ERROR] Unauthorized: userId missing');
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const okrs = await getCollection("okrs");
   const okr = await okrs.findOne({ _id: okrObjectId });
-  if (!okr || (okr.userId?.toString() !== userId.toString() && (!okr.departmentId))) {
+  if (!okr) {
+    console.error('[API ERROR] OKR not found in DB', { okrObjectId });
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
-  return NextResponse.json(okr);
+  // Permission: allow all authenticated users to view OKR, but only owner/creator can edit/delete/archive
+  let editable = false;
+  // Robust owner check: support both string[] and object[]
+  if (
+    okr.userId?.toString() === userId.toString() ||
+    (okr.owners && Array.isArray(okr.owners) && okr.owners.some((o: any) => {
+      if (typeof o === 'string') return o === userId.toString();
+      if (typeof o === 'object' && o._id) return o._id.toString() === userId.toString();
+      return false;
+    }))
+  ) {
+    editable = true;
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[API OKR FOUND]', { okrId: params.okrId, userId, editable });
+  }
+  // Attach permission info for client
+  return NextResponse.json({ ...okr, editable });
 }
 
 // PUT /api/okrs/:okrId - Update OKR
@@ -127,7 +152,18 @@ export async function PUT(req: NextRequest, context: any) {
   }
   // Only allow update if user owns the OKR or is a department manager (future extension)
   const okr = await okrs.findOne({ _id: okrObjectId });
-  if (!okr || (okr.userId?.toString() !== userId.toString() && (!okr.departmentId))) {
+  // Allow if user is creator or in owners array
+  const isOwner = (
+    okr && (
+      okr.userId?.toString() === userId.toString() ||
+      (okr.owners && Array.isArray(okr.owners) && okr.owners.some((o: any) => {
+        if (typeof o === 'string') return o === userId.toString();
+        if (typeof o === 'object' && o._id) return o._id.toString() === userId.toString();
+        return false;
+      }))
+    )
+  );
+  if (!okr || !isOwner) {
     return NextResponse.json({ error: "Not found or forbidden" }, { status: 403 });
   }
   // Remove _id from update payload to avoid immutable field error
@@ -198,7 +234,18 @@ export async function DELETE(req: NextRequest, context: any) {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const okrs = await getCollection("okrs");
   const okr = await okrs.findOne({ _id: okrObjectId });
-  if (!okr || (okr.userId?.toString() !== userId.toString() && (!okr.departmentId))) {
+  // Allow if user is creator or in owners array
+  const isOwner = (
+    okr && (
+      okr.userId?.toString() === userId.toString() ||
+      (okr.owners && Array.isArray(okr.owners) && okr.owners.some((o: any) => {
+        if (typeof o === 'string') return o === userId.toString();
+        if (typeof o === 'object' && o._id) return o._id.toString() === userId.toString();
+        return false;
+      }))
+    )
+  );
+  if (!okr || !isOwner) {
     return NextResponse.json({ error: "Not found or forbidden" }, { status: 403 });
   }
 

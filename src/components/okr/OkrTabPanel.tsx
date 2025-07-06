@@ -27,6 +27,7 @@ interface Okr {
   createdBy?: string;
   createdByAvatarUrl?: string;
   createdByInitials?: string;
+  slug?: string;
 }
 
 interface OkrTabPanelProps {
@@ -90,6 +91,8 @@ export const OkrTabPanel: React.FC<OkrTabPanelProps> = ({
                 createdByAvatarUrl={okr.createdByAvatarUrl}
                 createdByInitials={okr.createdByInitials}
                 goalType={okr.goalType}
+                slug={okr.slug || ''}
+                _id={okr._id}
               />
               <div className="absolute top-2 right-2">
                 <OkrCardMenu

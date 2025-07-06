@@ -74,7 +74,8 @@ const DashboardSkeleton = () => (
 
 export default function DashboardPage() {
   // SessionStatus type removed as unused
-  
+  const router = useRouter();
+
   const { data: session, status } = useSession({
     required: true,
     onUnauthenticated() {
@@ -467,7 +468,20 @@ export default function DashboardPage() {
                     // Enrich all owners for this OKR
                     const enrichedOwners = enrichOwnersWithUserData(okr.owners || [], users);
                     return (
-                      <li key={okr._id} className="flex items-center justify-between bg-neutral-50 rounded-lg px-4 py-3 border border-neutral-100">
+                      <li
+                        key={okr._id}
+                        className="flex items-center justify-between bg-neutral-50 rounded-lg px-4 py-3 border border-neutral-100 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 outline-none transition-shadow"
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`View details for OKR: ${okr.objective}`}
+                        onClick={() => router.push(`/okrs/${'slug' in okr && okr.slug ? okr.slug : (okr.objective || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}-${okr._id}`)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            router.push(`/okrs/${'slug' in okr && okr.slug ? okr.slug : (okr.objective || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}-${okr._id}`);
+                          }
+                        }}
+                      >
                         <div className="flex items-center gap-3 min-w-0">
                           {/* All owner avatars */}
                           <div className="flex -space-x-2">

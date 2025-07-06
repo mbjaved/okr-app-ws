@@ -27,7 +27,7 @@ export const OkrCardMenu: React.FC<OkrCardMenuProps> = ({
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
         <button
-          className="p-1 rounded-full hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+          className="p-1 rounded-full hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
           aria-label="Open actions menu"
         >
           <DotsHorizontalIcon className="w-5 h-5 text-gray-400" />

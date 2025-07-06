@@ -39,6 +39,8 @@ interface OkrCardProps {
   createdBy?: string;
   createdByAvatarUrl?: string;
   createdByInitials?: string;
+  slug: string; // For navigation
+  _id: string;  // For navigation
 }
 
 // Status pill color mapping
@@ -57,6 +59,8 @@ const statusPill: Record<string, string> = {
   "cancelled": "bg-red-100 text-red-700 border-red-200",
 };
 
+import { useRouter } from 'next/navigation';
+
 export const OkrCard: React.FC<OkrCardProps> = ({
   objective,
   dueDate,
@@ -71,20 +75,87 @@ export const OkrCard: React.FC<OkrCardProps> = ({
   createdBy,
   createdByAvatarUrl,
   createdByInitials,
+  slug,
+  _id,
 }) => {
-  console.log('[OkrCard] props:', { createdBy, createdByAvatarUrl, createdByInitials });
+  const router = useRouter();
   // Calculate average percent progress for ring
   const percentKRs = (keyResults || []).filter(kr => kr.type === "percent" && typeof kr.progress === "number");
   const avgProgress = percentKRs.length > 0 ? Math.round(percentKRs.reduce((sum, kr) => sum + (kr.progress ?? 0), 0) / percentKRs.length) : 0;
 
+  // Navigation handler
+  const [navigating, setNavigating] = React.useState(false);
+
+  // Always use the real MongoDB _id and sanitized slug for the details page URL
+  const detailsUrl = React.useMemo(() => {
+    // Slug: fallback to 'okr' if blank, remove trailing dashes
+    const safeSlug = (slug || 'okr').replace(/-+$/, '').replace(/[^a-zA-Z0-9-]+/g, '-').toLowerCase();
+    // _id: must be a valid 24-char hex string
+    const safeId = typeof _id === 'string' && /^[a-fA-F0-9]{24}$/.test(_id) ? _id : '';
+    const url = safeId ? `/okrs/${safeSlug}-${safeId}` : '#';
+    // Debug log for every card rendered
+    if (process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.log('[OKR CARD URL]', { safeSlug, safeId, url, _id, slug });
+    }
+    return url;
+  }, [slug, _id]);
+
+  const handleCardClick = (e: React.MouseEvent | React.KeyboardEvent) => {
+    // Debug: Log event type, slug, _id, navigation state, and detailsUrl
+    console.log('[OKR CARD CLICK]', {
+      source: typeof window !== 'undefined' && window.location.pathname.includes('okrs') ? 'OKRs Tab' : 'Dashboard',
+      eventType: e.type,
+      slug,
+      _id,
+      navigating,
+      detailsUrl,
+      target: (e.target as HTMLElement).tagName,
+    });
+    // Prevent navigation if a menu or button inside the card was clicked
+    if ((e.target as HTMLElement).closest('[data-okr-menu]')) return;
+    if (detailsUrl !== '#' && !navigating) {
+      setNavigating(true);
+      router.push(detailsUrl);
+    }
+  };
+
+  // Keyboard accessibility
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    console.log('[OKR CARD KEYDOWN]', {
+      source: typeof window !== 'undefined' && window.location.pathname.includes('okrs') ? 'OKRs Tab' : 'Dashboard',
+      eventType: e.type,
+      key: e.key,
+      slug,
+      _id,
+      navigating,
+      target: (e.target as HTMLElement).tagName,
+    });
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleCardClick(e);
+    }
+  };
+
   return (
     <Card
-      className="flex flex-row items-stretch gap-4 p-4 md:p-6 bg-white rounded-2xl shadow border border-gray-200 focus-within:ring-2 focus-within:ring-blue-400 cursor-pointer hover:shadow-lg transition-shadow min-h-[112px]"
+      className={`flex flex-row items-stretch gap-4 p-4 md:p-6 bg-white rounded-2xl shadow border border-gray-200 focus-within:ring-2 focus-within:ring-blue-400 cursor-pointer hover:shadow-lg transition-shadow min-h-[112px] relative ${navigating ? 'opacity-60 pointer-events-none' : ''}`}
       tabIndex={0}
-      aria-label={`OKR: ${objective}`}
-      role="article"
+      aria-label={`View details for OKR: ${objective}`}
+      role="button"
       style={{ fontFamily: 'Poppins, sans-serif' }}
+      onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
+      aria-busy={navigating}
     >
+      {navigating && (
+        <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-20 rounded-2xl">
+          <svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-label="Loading">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          </svg>
+        </div>
+      )}
       {/* Progress ring left visual */}
       <div className="flex items-center justify-center min-w-[56px] max-w-[56px] mr-2 md:mr-4">
         <ProgressRing progress={avgProgress} size={48} color="#0071E1" bgColor="#FAFAFB" label="Progress" />

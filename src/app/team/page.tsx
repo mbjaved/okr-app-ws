@@ -129,7 +129,7 @@ export default function TeamPage() {
           <div className="flex gap-2 items-center">
             {/* Filter button opens side drawer (Design_Prompts) */}
             <button
-              className="border border-gray-300 bg-white hover:bg-gray-100 px-3 py-1 rounded text-sm font-medium flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="border border-gray-300 bg-white hover:bg-gray-100 px-3 py-1 rounded text-sm font-medium flex items-center gap-1 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
               aria-label="Open filters"
               onClick={() => setDrawerOpen(true)}
               type="button"
@@ -147,13 +147,7 @@ export default function TeamPage() {
               onChange={e => setSearch(e.target.value)}
               style={{ minWidth: 180 }}
             />
-            <button
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2 rounded shadow focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
-              aria-label="Add User"
-              // onClick={handleAddUser}
-            >
-              Add User
-            </button>
+
           </div>
         </div>
 
@@ -284,7 +278,7 @@ export default function TeamPage() {
             {totalPages > 1 && (
               <nav className="flex justify-end items-center gap-2 px-6 py-4" aria-label="Pagination">
                 <button
-                  className="px-3 py-1 rounded border text-sm font-medium bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className={`px-3 py-1 rounded border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400 ${page === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-100 cursor-pointer'}`}
                   onClick={() => setPage(page - 1)}
                   disabled={page === 1}
                   aria-label="Previous page"
@@ -294,16 +288,17 @@ export default function TeamPage() {
                 {Array.from({ length: totalPages }, (_, i) => (
                   <button
                     key={i + 1}
-                    className={`px-3 py-1 rounded border text-sm font-medium ${page === i + 1 ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-100'} focus:outline-none focus:ring-2 focus:ring-blue-400`}
+                    className={`px-3 py-1 rounded border text-sm font-semibold ${page === i + 1 ? 'bg-blue-600 text-white cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-blue-600 cursor-pointer'}`}
                     onClick={() => setPage(i + 1)}
                     aria-current={page === i + 1 ? 'page' : undefined}
+                    disabled={page === i + 1}
                     aria-label={`Page ${i + 1}`}
                   >
                     {i + 1}
                   </button>
                 ))}
                 <button
-                  className="px-3 py-1 rounded border text-sm font-medium bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className={`px-3 py-1 rounded border text-sm font-semibold ${page === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white hover:bg-gray-50 text-blue-600 cursor-pointer'}`}
                   onClick={() => setPage(page + 1)}
                   disabled={page === totalPages}
                   aria-label="Next page"
@@ -334,7 +329,7 @@ export default function TeamPage() {
             <h2 className="text-lg font-semibold">Filter Team</h2>
             <button
               aria-label="Close filters"
-              className="text-gray-600 hover:text-red-600 focus:outline-none"
+              className="text-gray-600 hover:text-red-600 focus:outline-none cursor-pointer"
               onClick={() => setDrawerOpen(false)}
               type="button"
             >
@@ -356,7 +351,7 @@ export default function TeamPage() {
                         : selectedDepartments.filter(d => d !== dep));
                     }}
                     aria-label={`Filter by department ${dep}`}
-                    className="accent-blue-600"
+                    className="accent-blue-600 cursor-pointer"
                   />
                   <span>{dep}</span>
                 </label>
@@ -378,7 +373,7 @@ export default function TeamPage() {
                         : selectedRoles.filter(r => r !== role));
                     }}
                     aria-label={`Filter by role ${role}`}
-                    className="accent-blue-600"
+                    className="accent-blue-600 cursor-pointer"
                   />
                   <span>{role}</span>
                 </label>
@@ -387,7 +382,7 @@ export default function TeamPage() {
           </div>
           <div className="flex gap-2 mt-4">
             <button
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
               type="button"
               aria-label="Apply filters"
               onClick={() => setDrawerOpen(false)}
@@ -395,7 +390,7 @@ export default function TeamPage() {
               Apply
             </button>
             <button
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
               type="button"
               aria-label="Cancel and reset filters"
               onClick={() => {
