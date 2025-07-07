@@ -12,6 +12,7 @@ import { Table, TableHead, TableRow, TableCell, TableBody } from "@/components/u
 import Avatar from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { TeamFilters } from "@/components/ui/TeamFilters";
 // Pagination size constant
 const PAGE_SIZE = 8;
 
@@ -71,23 +72,26 @@ function TeamPage() {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Side drawer for filters (Design_Prompts)
-  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  // Filter modal state (matches OKRs page advanced filter UX)
+  const [filtersOpen, setFiltersOpen] = React.useState(false);
   const [selectedDepartments, setSelectedDepartments] = React.useState<string[]>([]);
   const [selectedRoles, setSelectedRoles] = React.useState<string[]>([]);
 
-  // Get unique departments and roles from user data
+  // Compute active filter count (for badge)
+  const activeFilterCount = (selectedDepartments.length > 0 ? 1 : 0) + (selectedRoles.length > 0 ? 1 : 0);
+
+  // Get unique departments and roles from user data as MultiSelectOption[]
   const departmentOptions = React.useMemo(() => {
     if (!teams) return [];
     const set = new Set<string>();
     teams.forEach((u: User) => { if (u.department) set.add(u.department); });
-    return Array.from(set).filter(Boolean).sort();
+    return Array.from(set).filter(Boolean).sort().map((d) => ({ value: d, label: d }));
   }, [teams]);
   const roleOptions = React.useMemo(() => {
     if (!teams) return [];
     const set = new Set<string>();
     teams.forEach((u: User) => { if (u.role) set.add(u.role); });
-    return Array.from(set).filter(Boolean).sort();
+    return Array.from(set).filter(Boolean).sort().map((r) => ({ value: r, label: r }));
   }, [teams]);
 
   // Sorting state (Best Practice: modular, accessible, per Design_Prompts)
@@ -151,49 +155,80 @@ function TeamPage() {
     <main className="bg-[#FAFAFB] min-h-screen py-8 px-2 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto w-full">
         {/* Header: Title and Controls */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Team Members</h1>
-          <div className="flex flex-row gap-2 items-center w-full sm:w-auto">
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full sm:w-64 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-              aria-label="Search users"
-            />
-            <button
-              type="button"
-              className="flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white hover:bg-gray-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-400"
-              onClick={() => setDrawerOpen(true)}
-              aria-label="Open filters"
-            >
-              <svg className="h-4 w-4 mr-1 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6.414 6.414A1 1 0 0013 13.414V19a1 1 0 01-1.447.894l-4-2A1 1 0 017 17v-3.586a1 1 0 00-.293-.707L3.293 6.707A1 1 0 013 6V4z" /></svg>
-              Filters
-            </button>
-            {isAdmin && !manageMode && (
-              <button
-                type="button"
-                className="flex items-center px-3 py-2 border border-blue-400 text-blue-700 bg-white rounded-lg text-sm font-semibold hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-400 active:bg-blue-100 cursor-pointer transition-colors"
-                onClick={() => setManageMode(true)}
-                aria-label="Manage Users"
-              >
-                <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m3-4a4 4 0 110-8 4 4 0 010 8zm6 4a4 4 0 10-8 0" /></svg>
-                Manage Users
-              </button>
-            )}
-            {isAdmin && manageMode && (
-              <button
-                type="button"
-                className="flex items-center px-3 py-2 border border-gray-400 text-gray-700 bg-gray-100 rounded-lg text-sm font-semibold hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                onClick={() => { setManageMode(false); setSelectedUserIds([]); }}
-                aria-label="Cancel Manage Users"
-              >
-                Cancel
-              </button>
-            )}
+        <div className="flex flex-col gap-4">
+          <div className="pt-6">
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-row items-center justify-between w-full">
+                <h1 className="text-2xl font-bold">Teams</h1>
+                <div className="flex flex-row items-center gap-3">
+                  <input
+                    type="text"
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm bg-white transition-all cursor-pointer"
+                    placeholder="Search teams or users..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    aria-label="Search teams or users"
+                    style={{ minWidth: 220 }}
+                  />
+                  <div className="flex flex-row gap-2">
+                    <button
+                      className="flex items-center gap-1 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 font-semibold shadow-sm hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors cursor-pointer"
+                      onClick={() => setFiltersOpen(true)}
+                      aria-label="Open filters"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-6.414 6.414A1 1 0 0014 13.414V19a1 1 0 01-1.447.894l-4-2A1 1 0 018 17V13.414a1 1 0 00-.293-.707L1.293 6.707A1 1 0 011 6V4z" />
+                      </svg>
+                      Filters
+                      {activeFilterCount > 0 && (
+                        <span className="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                          {activeFilterCount}
+                        </span>
+                      )}
+                    </button>
+                    {/* Manage Users/Cancel logic for Admins */}
+                    {isAdmin && !manageMode && (
+                      <button
+                        type="button"
+                        className="flex items-center px-3 py-2 rounded-lg border border-blue-400 text-blue-700 bg-white font-semibold shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-400 active:bg-blue-100 cursor-pointer transition-colors"
+                        onClick={() => setManageMode(true)}
+                        aria-label="Manage Users"
+                      >
+                        <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m3-4a4 4 0 110-8 4 4 0 010 8zm6 4a4 4 0 10-8 0" /></svg>
+                        Manage Users
+                      </button>
+                    )}
+                    {isAdmin && manageMode && (
+                      <button
+                        type="button"
+                        className="flex items-center px-3 py-2 rounded-lg border border-gray-400 text-gray-700 bg-gray-100 font-semibold shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors cursor-pointer"
+                        onClick={() => { setManageMode(false); setSelectedUserIds([]); }}
+                        aria-label="Cancel Manage Users"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <hr className="mt-3 border-gray-200" />
+            </div>
           </div>
         </div>
+        {/* TeamFilters Modal (always render at top level of main, not inside header) */}
+        <TeamFilters
+          open={filtersOpen}
+          onClose={() => setFiltersOpen(false)}
+          departmentOptions={departmentOptions}
+          roleOptions={roleOptions}
+          selectedDepartments={selectedDepartments}
+          selectedRoles={selectedRoles}
+          onDepartmentsChange={setSelectedDepartments}
+          onRolesChange={setSelectedRoles}
+          onReset={() => { setSelectedDepartments([]); setSelectedRoles([]); }}
+          onApply={() => setFiltersOpen(false)}
+          activeFilterCount={activeFilterCount}
+        />
         {error && (
           <div className="flex items-center gap-2 p-6 bg-red-50 border border-red-200 rounded text-red-700" role="alert">
             <svg className="h-5 w-5 text-red-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
