@@ -20,8 +20,16 @@ export async function POST(req: NextRequest) {
   }
   // Generate token
   const token = randomBytes(32).toString("hex");
-  const expires = new Date(Date.now() + 1000 * 60 * 60).toISOString(); // 1 hour
-  await savePasswordResetToken(user._id, token, expires);
-  await sendResetEmail(email, token);
-  return NextResponse.json({ message: "Reset email sent" });
+  const expiryMinutes = parseInt(process.env.PASSWORD_RESET_TOKEN_EXPIRY_MINUTES || "60", 10);
+  if (isNaN(expiryMinutes) || expiryMinutes <= 0) {
+    return NextResponse.json({ error: "Invalid PASSWORD_RESET_TOKEN_EXPIRY_MINUTES env value. Must be a positive integer." }, { status: 500 });
+  }
+  const expires = new Date(Date.now() + 1000 * 60 * expiryMinutes).toISOString(); // configurable expiry
+  try {
+    await savePasswordResetToken(user._id, token, expires);
+    await sendResetEmail(email, token);
+    return NextResponse.json({ message: `Reset email sent. Token valid for ${expiryMinutes} minutes.` });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || "Failed to send reset email. Please try again later." }, { status: 500 });
+  }
 }
