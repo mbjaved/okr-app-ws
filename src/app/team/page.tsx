@@ -13,13 +13,13 @@ import Avatar from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { TeamFilters } from "@/components/ui/TeamFilters";
+import { InviteUsersModal } from "./InviteUsersModal";
+import { InviteUsersButton } from "./InviteUsersButton";
 // Pagination size constant
 const PAGE_SIZE = 8;
 
-// Simple toast utility (replace with your own Toast if available)
-function toast(msg: string, isError?: boolean) {
-  if (window && window.alert) window.alert(msg);
-}
+import Toast from "@/components/ui/Toast";
+
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -36,6 +36,52 @@ interface User {
 }
 
 function TeamPage() {
+  // Invite modal state
+  const [inviteOpen, setInviteOpen] = React.useState(false);
+  const [inviteLoading, setInviteLoading] = React.useState(false);
+
+  // Toast state
+  const [toastOpen, setToastOpen] = React.useState(false);
+  const [toastMsg, setToastMsg] = React.useState("");
+  const [toastType, setToastType] = React.useState<"success" | "error" | "info">("info");
+
+  // Invite API handler
+  async function handleInvite(emails: string[]) {
+    setInviteLoading(true);
+    try {
+      const res = await fetch('/api/users/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emails })
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Failed to send invites');
+      mutate('/api/users'); // Refresh user list
+      const invited = result.invited || [];
+      const ignored = result.ignored || [];
+      if (invited.length > 0) {
+        let msg = `Invites sent!`;
+        if (ignored.length > 0) {
+          msg += `\nIgnored (already registered): ${ignored.join(", ")}`;
+        }
+        setToastMsg(msg);
+        setToastType('success');
+        setToastOpen(true);
+        setInviteOpen(false); // Close modal if at least one invite sent
+      } else if (ignored.length > 0) {
+        setToastMsg(`No invites sent. Already registered: ${ignored.join(", ")}`);
+        setToastType('info');
+        setToastOpen(true);
+        // Keep modal open so user can edit
+      }
+    } catch (err: any) {
+      setToastMsg('Failed to send invites. Please try again.');
+      setToastType('error');
+      setToastOpen(true);
+    } finally {
+      setInviteLoading(false);
+    }
+  }
   const { data: session, status } = useSession();
 
   // Manage Users mode (selection mode)
@@ -238,11 +284,22 @@ function TeamPage() {
         {!isLoading && !error && paginatedTeams.length === 0 && (
           <div className="flex flex-col items-center justify-center p-12 text-gray-500">
             <svg className="h-10 w-10 mb-2 text-gray-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" /><path strokeLinecap="round" strokeLinejoin="round" d="M8 15h8M9 9h.01M15 9h.01" /></svg>
-            <span>No team members yet. Invite your first user!</span>
+            {isAdmin ? (
+              <>
+                <span>No team members yet. Invite your first user!</span>
+                <div className="mt-6">
+                  <InviteUsersButton onClick={() => setInviteOpen(true)} className="cursor-pointer" />
+                </div>
+              </>
+            ) : (
+              <span>No team members yet. Please contact your administrator to be invited.</span>
+            )}
           </div>
         )}
         {!isLoading && !error && paginatedTeams.length > 0 && (
           <div className="relative">
+            {/* Invite New User button (bottom-left, only Admin in Manage Users mode) */}
+
             {/* Sticky/fixed bulk actions toolbar at bottom */}
             {isAdmin && manageMode && selectedUserIds.length > 0 && (
               <div
@@ -335,49 +392,62 @@ function TeamPage() {
                 </TableBody>
               </Table>
             </Card>
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <nav className="flex justify-end items-center gap-2 px-6 py-4" aria-label="Pagination">
-                <button
-                  className={`px-3 py-1 rounded border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400 ${page === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-100 cursor-pointer"}`}
-                  onClick={() => setPage(page - 1)}
-                  disabled={page === 1}
-                  aria-label="Previous page"
-                >
-                  Prev
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => (
+            {/* Button + Pagination Controls Row (under table, flush with table edges) */}
+            <div className="flex flex-row items-center w-full px-0 mt-2" style={{marginLeft: 0, marginRight: 0}}>
+              <div className="flex items-center mr-4" style={{minWidth: 140, minHeight: 40}}>
+                {isAdmin && manageMode ? (
+                  <InviteUsersButton onClick={() => setInviteOpen(true)} className="cursor-pointer" />
+                ) : (
+                  // Invisible placeholder to prevent layout shift
+                  <div style={{visibility: 'hidden', height: 40, display: 'flex', alignItems: 'center'}} />
+                )}
+              </div>
+              <div className="flex-1" />
+              {totalPages > 1 && (
+                <nav className="flex items-center gap-2" aria-label="Pagination">
                   <button
-                    key={i + 1}
-                    className={`px-3 py-1 rounded border text-sm font-semibold ${
-                      page === i + 1
-                        ? "bg-blue-600 text-white cursor-not-allowed"
-                        : "bg-white hover:bg-gray-50 text-blue-600 cursor-pointer"
-                    }`}
-                    onClick={() => setPage(i + 1)}
-                    aria-current={page === i + 1 ? "page" : undefined}
-                    disabled={page === i + 1}
+                    className="px-3 py-1 rounded border text-gray-500 disabled:opacity-60 cursor-pointer hover:bg-blue-50 focus:ring-2 focus:ring-blue-400 transition disabled:cursor-not-allowed"
+                    onClick={() => setPage(page - 1)}
+                    disabled={page === 1}
                   >
-                    {i + 1}
+                    Prev
                   </button>
-                ))}
-                <button
-                  className={`px-3 py-1 rounded border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                    page === totalPages
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-white hover:bg-gray-100 cursor-pointer"
-                  }`}
-                  onClick={() => setPage(page + 1)}
-                  disabled={page === totalPages}
-                  aria-label="Next page"
-                >
-                  Next
-                </button>
-              </nav>
-            )}
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <button
+                      key={i + 1}
+                      className={`px-3 py-1 rounded border mx-1 transition cursor-pointer focus:ring-2 focus:ring-blue-400 ${page === i + 1 ? 'bg-blue-500 text-white cursor-not-allowed' : 'text-blue-500 hover:bg-blue-50'}`}
+                      onClick={() => setPage(i + 1)}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button
+                    className="px-3 py-1 rounded border text-gray-500 disabled:opacity-60 cursor-pointer hover:bg-blue-50 focus:ring-2 focus:ring-blue-400 transition disabled:cursor-not-allowed"
+                    onClick={() => setPage(page + 1)}
+                    disabled={page === totalPages}
+                  >
+                    Next
+                  </button>
+                </nav>
+              )}
+            </div>
           </div>
         )}
       </div>
+      {/* InviteUsersModal (always rendered, controlled by inviteOpen) */}
+      <InviteUsersModal
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        onInvite={handleInvite}
+        loading={inviteLoading}
+      />
+      <Toast
+        message={toastMsg}
+        type={toastType}
+        open={toastOpen}
+        onClose={() => setToastOpen(false)}
+        duration={2200}
+      />
     </main>
   );
 }

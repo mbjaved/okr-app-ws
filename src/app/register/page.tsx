@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Metadata } from "next";
 import { Card, CardContent } from "../../../components/ui/card";
 import { Button } from "../../../components/ui/button";
@@ -28,8 +29,12 @@ const registerSchema = z.object({
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
+import { useSearchParams } from "next/navigation";
+
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const inviteEmail = searchParams?.get("email") || "";
   const [toastOpen, setToastOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const [toastType, setToastType] = useState<"success" | "error" | "info">("success");
@@ -40,9 +45,16 @@ export default function RegisterPage() {
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
+    setValue,
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
+    defaultValues: { email: inviteEmail }
   });
+
+  // If inviteEmail changes (should only on first mount), set in form state
+  React.useEffect(() => {
+    if (inviteEmail) setValue("email", inviteEmail);
+  }, [inviteEmail, setValue]);
 
   async function onSubmit(data: RegisterFormValues) {
     setError("");
