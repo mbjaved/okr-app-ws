@@ -1,0 +1,42 @@
+Key confirmed requirements:
+
+Bulk invite: Modal supports multiple emails at once (comma, semicolon, newline, or space separated).
+Required field: Emails only.
+On invite: Send an email with a link to /register?email=... (email prefilled).
+Button placement:
+Bottom-left of table when Manage Users is enabled (Admin only).
+In empty state if filters return no results (Admin only).
+Never for non-admins; show friendly empty state for non-admins.
+Text for empty state will be tailored for Admins (prompt to invite) and non-admins (informational, no invite option).
+Reuse existing Button, Modal, and EmptyState components per Best_Practices.md.
+Next actions:
+
+Audit and reuse existing modal/button/empty state components.
+Implement Invite New User button logic and placement (bottom-left, empty state).
+Build the bulk invite modal (multi-email, validation, accessible).
+Wire up backend/API call to send invite emails with /register link.
+Add/adjust empty state text for both Admins and non-admins.
+Test all flows for both Admin and non-admin roles.
+
+Implementation Steps
+Button Placement & Visibility
+Render the “Invite New User” button at the bottom-left of the table (absolute/fixed, responsive) when Manage Users is enabled and user is Admin.
+Render the button in the empty state if filters return no results and user is Admin.
+For non-admins, show only a role-appropriate empty state (no invite button).
+Bulk Invite Modal
+Reuse the shared Modal component (src/components/ui/Modal.tsx) for consistent UI/UX.
+Modal will have:
+Title: “Invite New Users”
+Multi-line email input (accepts comma, semicolon, space, or newline separated emails)
+Validation for email format and duplicates
+Accessible labels, focus management, and keyboard navigation
+Actions: Cancel, Send Invites (uses shared Button component)
+On submit, call the backend to send invites with /register?email=... links.
+Empty State
+Reuse the EmptyState component (src/components/okr/EmptyState.tsx).
+Admins: Show message like “No team members yet. Invite your first user!” with invite button.
+Non-admins: Show message like “No team members yet. Please contact your administrator to be invited.” (no button).
+Component Reuse & Best Practices
+Use shared Button and Modal components.
+Ensure all interactive elements have proper cursor, focus, and hover states.
+Fully responsive and accessible.
