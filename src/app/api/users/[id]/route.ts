@@ -28,7 +28,8 @@ export async function GET(req: NextRequest, context: any) {
       department: user.department || "-",
       designation: user.designation || "-",
       okrsCount: user.okrsCount || 0,
-      manager: user.manager || null
+      manager: user.manager || null,
+      active: user.active !== false, // Default to true for legacy users
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Unknown error" }, { status: 500 });

@@ -12,6 +12,10 @@ import { Table, TableHead, TableRow, TableCell, TableBody } from "@/components/u
 import Avatar from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { TeamUserMenu } from "@/components/okr/TeamUserMenu";
+import { AssignRoleModal } from "@/components/okr/AssignRoleModal";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/button";
 import { TeamFilters } from "@/components/ui/TeamFilters";
 import { InviteUsersModal } from "./InviteUsersModal";
 import { InviteUsersButton } from "./InviteUsersButton";
@@ -32,10 +36,50 @@ interface User {
   department?: string;
   role?: string;
   okrsCount?: number;
+  active?: boolean; // Added: user is active (default true)
   [key: string]: any;
 }
 
+type BulkActionType = 'activate' | 'deactivate' | 'resetPw' | null;
+
 function TeamPage() {
+  // --- ActionsMenu handlers ---
+  const [assignRoleOpen, setAssignRoleOpen] = React.useState(false);
+
+  // Get current user id from session
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id || session?.user?._id || null;
+  const [assignRoleUser, setAssignRoleUser] = React.useState<User | null>(null);
+  const [assignRoleLoading, setAssignRoleLoading] = React.useState(false);
+
+  function handleAssignRole(user: User) {
+    setAssignRoleUser(user);
+    setAssignRoleOpen(true);
+  }
+
+  const [confirmActivateOpen, setConfirmActivateOpen] = React.useState(false);
+const [confirmActivateUser, setConfirmActivateUser] = React.useState<User | null>(null);
+const [activateLoading, setActivateLoading] = React.useState(false);
+const [pendingActivateAction, setPendingActivateAction] = React.useState<'activate' | 'deactivate' | null>(null);
+
+function handleActivateDeactivate(user: User) {
+  setConfirmActivateUser(user);
+  setPendingActivateAction(user.active !== false ? 'deactivate' : 'activate');
+  setConfirmActivateOpen(true);
+}
+
+  const [resetPwOpen, setResetPwOpen] = React.useState(false);
+const [resetPwUser, setResetPwUser] = React.useState<User | null>(null);
+const [resetPwLoading, setResetPwLoading] = React.useState(false);
+
+function handleResetPassword(user: User) {
+  setResetPwUser(user);
+  setResetPwOpen(true);
+}
+
+  // Bulk confirm modal state
+  const [bulkConfirm, setBulkConfirm] = React.useState<{ action: BulkActionType, open: boolean }>({ action: null, open: false });
+
   // Invite modal state
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const [inviteLoading, setInviteLoading] = React.useState(false);
@@ -82,7 +126,7 @@ function TeamPage() {
       setInviteLoading(false);
     }
   }
-  const { data: session, status } = useSession();
+
 
   // Manage Users mode (selection mode)
   const [manageMode, setManageMode] = React.useState(false);
@@ -200,6 +244,128 @@ function TeamPage() {
   return (
     <main className="bg-[#FAFAFB] min-h-screen py-8 px-2 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto w-full">
+        {/* Table and actions */}
+        <AssignRoleModal
+          open={assignRoleOpen}
+          user={assignRoleUser}
+          roleOptions={roleOptions}
+          loading={assignRoleLoading}
+          onClose={() => { setAssignRoleOpen(false); setAssignRoleUser(null); }}
+          onAssign={async (userId, role) => {
+            setAssignRoleLoading(true);
+            try {
+              const res = await fetch('/api/users/bulk', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userIds: [userId], action: 'assignRole', value: role })
+              });
+              const result = await res.json();
+              if (!res.ok) throw new Error(result.error || 'Failed to assign role');
+              setToastMsg('Role updated successfully');
+              setToastType('success');
+              setToastOpen(true);
+              mutate('/api/users'); // Refresh users
+              setAssignRoleOpen(false);
+              setAssignRoleUser(null);
+            } catch (err: any) {
+              setToastMsg(err.message || 'Failed to assign role');
+              setToastType('error');
+              setToastOpen(true);
+            } finally {
+              setAssignRoleLoading(false);
+            }
+          }}
+        />
+        {/* Confirm Activate/Deactivate Modal */}
+        <Modal
+          open={resetPwOpen}
+          onClose={() => setResetPwOpen(false)}
+          title="Reset Password"
+        >
+          <div className="flex flex-col gap-4">
+            <div>
+              Are you sure you want to send a password reset email to <b>{resetPwUser?.username || resetPwUser?.email}</b>?
+            </div>
+            <div className="flex gap-2 justify-end mt-4">
+              <Button variant="secondary" onClick={() => setResetPwOpen(false)} disabled={resetPwLoading}>Cancel</Button>
+              <Button
+                onClick={async () => {
+                  if (!resetPwUser) return;
+                  setResetPwLoading(true);
+                  try {
+                    const res = await fetch('/api/users/bulk', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userIds: [resetPwUser._id] })
+                    });
+                    const result = await res.json();
+                    if (!res.ok) throw new Error(result.error || 'Failed to send reset email');
+                    setToastMsg('Password reset email sent');
+                    setToastType('success');
+                    setToastOpen(true);
+                    setResetPwOpen(false);
+                    setResetPwUser(null);
+                  } catch (err: any) {
+                    setToastMsg(err.message || 'Failed to send reset email');
+                    setToastType('error');
+                    setToastOpen(true);
+                  } finally {
+                    setResetPwLoading(false);
+                  }
+                }}
+                isLoading={resetPwLoading}
+                disabled={resetPwLoading}
+              >
+                Send Reset Email
+              </Button>
+            </div>
+          </div>
+        </Modal>
+        <Modal
+          open={confirmActivateOpen}
+          onClose={() => setConfirmActivateOpen(false)}
+          title={pendingActivateAction === 'deactivate' ? 'Deactivate User' : 'Activate User'}
+        >
+          <div className="flex flex-col gap-4">
+            <div>
+              Are you sure you want to {pendingActivateAction === 'deactivate' ? 'deactivate' : 'activate'} user <b>{confirmActivateUser?.username || confirmActivateUser?.email}</b>?
+            </div>
+            <div className="flex gap-2 justify-end mt-4">
+              <Button variant="secondary" onClick={() => setConfirmActivateOpen(false)} disabled={activateLoading}>Cancel</Button>
+              <Button
+                onClick={async () => {
+                  if (!confirmActivateUser) return;
+                  setActivateLoading(true);
+                  try {
+                    const res = await fetch('/api/users/bulk', {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userIds: [confirmActivateUser._id], action: pendingActivateAction })
+                    });
+                    const result = await res.json();
+                    if (!res.ok) throw new Error(result.error || 'Failed to update user');
+                    setToastMsg(`User ${pendingActivateAction === 'deactivate' ? 'deactivated' : 'activated'} successfully`);
+                    setToastType('success');
+                    setToastOpen(true);
+                    mutate('/api/users');
+                    setConfirmActivateOpen(false);
+                    setConfirmActivateUser(null);
+                  } catch (err: any) {
+                    setToastMsg(err.message || 'Failed to update user');
+                    setToastType('error');
+                    setToastOpen(true);
+                  } finally {
+                    setActivateLoading(false);
+                  }
+                }}
+                isLoading={activateLoading}
+                disabled={activateLoading}
+              >
+                {pendingActivateAction === 'deactivate' ? 'Deactivate' : 'Activate'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
         {/* Header: Title and Controls */}
         <div className="flex flex-col gap-4">
           <div className="pt-6">
@@ -301,46 +467,74 @@ function TeamPage() {
             {/* Invite New User button (bottom-left, only Admin in Manage Users mode) */}
 
             {/* Sticky/fixed bulk actions toolbar at bottom */}
-            {isAdmin && manageMode && selectedUserIds.length > 0 && (
-              <div
-                className="fixed left-0 right-0 z-30 flex flex-row items-center gap-2 bg-white/95 shadow-2xl px-6 py-3 border-t border-blue-200 animate-fade-in transition-all duration-200 max-w-6xl mx-auto rounded-lg"
-                style={{margin: '0 auto', bottom: '2rem'}}
-                role="toolbar"
-                aria-label="Bulk user actions"
-              >
-                <span className="text-blue-700 font-semibold mr-4">{selectedUserIds.length} selected</span>
-                <button
-                  className="px-3 py-1 rounded bg-blue-600 text-white font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors cursor-pointer"
-                  type="button"
-                  tabIndex={0}
-                  onClick={() => {/* TODO: assign role logic */}}
-                >Assign Role</button>
-                <button
-                  className="px-3 py-1 rounded bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-300 transition-colors cursor-pointer"
-                  type="button"
-                  tabIndex={0}
-                  onClick={() => {/* TODO: deactivate logic */}}
-                >Deactivate</button>
-                <button
-                  className="px-3 py-1 rounded bg-gray-200 text-gray-800 font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors cursor-pointer"
-                  type="button"
-                  tabIndex={0}
-                  onClick={() => {/* TODO: reset password logic */}}
-                >Reset Password</button>
-                <button
-                  className="ml-auto px-3 py-1 rounded bg-white border border-gray-300 text-gray-600 font-medium hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors cursor-pointer"
-                  type="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedUserIds([])}
-                >Clear</button>
-                <button
-                  className="px-3 py-1 rounded bg-blue-100 border border-blue-300 text-blue-700 font-semibold ml-2 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors cursor-pointer"
-                  type="button"
-                  tabIndex={0}
-                  onClick={() => { setManageMode(false); setSelectedUserIds([]); }}
-                >Done</button>
-              </div>
-            )}
+            {isAdmin && manageMode && selectedUserIds.length > 0 && (() => {
+              // Find selected users
+              const selectedUsers = teams.filter((u: User) => selectedUserIds.includes(u._id));
+              const allActive = selectedUsers.every((u: User) => u.active !== false);
+              const allInactive = selectedUsers.every((u: User) => u.active === false);
+              const isMixed = !allActive && !allInactive;
+              return (
+                <div
+                  className="fixed left-0 right-0 z-30 flex flex-row items-center gap-2 bg-white/95 shadow-2xl px-6 py-3 border-t border-blue-200 animate-fade-in transition-all duration-200 max-w-6xl mx-auto rounded-lg"
+                  style={{margin: '0 auto', bottom: '2rem'}}
+                  role="toolbar"
+                  aria-label="Bulk user actions"
+                >
+                  <span className="text-blue-700 font-semibold mr-4">{selectedUserIds.length} selected</span>
+                  <button
+                    className="px-3 py-1 rounded bg-blue-600 text-white font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors cursor-pointer"
+                    type="button"
+                    tabIndex={0}
+                    onClick={async () => {
+                      // Open assign role modal for bulk
+                      setAssignRoleUser(null); // null = bulk
+                      setAssignRoleOpen(true);
+                    }}
+                  >Assign Role</button>
+                  {/* Bulk Deactivate */}
+                  {/* Bulk Deactivate: hide if current user is in selection */}
+                  {!isMixed && allActive && selectedUserIds.every(id => id !== currentUserId) && (
+                    <button
+                      className="px-3 py-1 rounded bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-300 transition-colors cursor-pointer"
+                      type="button"
+                      tabIndex={0}
+                      onClick={() => setBulkConfirm({ action: 'deactivate', open: true })}
+                      disabled={activateLoading}
+                    >Deactivate</button>
+                  )}
+                  {/* Bulk Activate: hide if current user is in selection */}
+                  {!isMixed && allInactive && selectedUserIds.every(id => id !== currentUserId) && (
+                    <button
+                      className="px-3 py-1 rounded bg-green-500 text-white font-medium hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300 transition-colors cursor-pointer"
+                      type="button"
+                      tabIndex={0}
+                      onClick={() => setBulkConfirm({ action: 'activate', open: true })}
+                      disabled={activateLoading}
+                    >Activate</button>
+                  )}
+                  {/* Bulk Reset Password */}
+                  <button
+                    className="px-3 py-1 rounded bg-gray-200 text-gray-800 font-medium hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors cursor-pointer"
+                    type="button"
+                    tabIndex={0}
+                    onClick={() => setBulkConfirm({ action: 'resetPw', open: true })}
+                    disabled={resetPwLoading}
+                  >Reset Password</button>
+                  <button
+                    className="ml-auto px-3 py-1 rounded bg-white border border-gray-300 text-gray-600 font-medium hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors cursor-pointer"
+                    type="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedUserIds([])}
+                  >Clear</button>
+                  <button
+                    className="px-3 py-1 rounded bg-blue-100 border border-blue-300 text-blue-700 font-semibold ml-2 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors cursor-pointer"
+                    type="button"
+                    tabIndex={0}
+                    onClick={() => { setManageMode(false); setSelectedUserIds([]); }}
+                  >Done</button>
+                </div>
+              );
+            })()}
             <Card className="relative">
               <Table>
 
@@ -364,12 +558,14 @@ function TeamPage() {
                   {paginatedTeams.map((user: User) => (
                     <TableRow key={user._id}>
                       {isAdmin && manageMode && (
-                        <TableCell>
+                        <TableCell className={user.active === false ? 'opacity-50' : ''}>
                           <input
                             type="checkbox"
                             checked={selectedUserIds.includes(user._id)}
                             onChange={() => handleToggleUser(user._id)}
-                            aria-label={`Select user ${user.username || user.email}`}
+                            className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            aria-label={`Select user ${user.name || user.email}`}
+                            disabled={user._id === currentUserId}
                           />
                         </TableCell>
                       )}
@@ -387,6 +583,23 @@ function TeamPage() {
                       <TableCell>{user.department}</TableCell>
                       <TableCell>{user.role}</TableCell>
                       <TableCell>{user.okrsCount ?? 0}</TableCell>
+                      <TableCell>
+                        <Badge color={user.active !== false ? 'green' : 'red'}>
+                          {user.active !== false ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {isAdmin && (
+                          <TeamUserMenu
+                            isAdmin={isAdmin}
+                            isActive={user.active !== false}
+                            onAssignRole={() => handleAssignRole(user)}
+                            onActivateDeactivate={() => handleActivateDeactivate(user)}
+                            onResetPassword={() => handleResetPassword(user)}
+                            isSelf={user._id === currentUserId}
+                          />
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -441,6 +654,102 @@ function TeamPage() {
         onInvite={handleInvite}
         loading={inviteLoading}
       />
+      {/* Bulk Confirm Modal */}
+      <Modal
+        open={bulkConfirm.open}
+        onClose={() => setBulkConfirm({ action: null, open: false })}
+        title={bulkConfirm.action === 'deactivate' ? 'Deactivate Users' : bulkConfirm.action === 'activate' ? 'Activate Users' : 'Reset Passwords'}
+      >
+        <div className="flex flex-col gap-4">
+          <div>
+            Are you sure you want to <b>{bulkConfirm.action === 'deactivate' ? 'deactivate' : bulkConfirm.action === 'activate' ? 'activate' : 'send password reset emails to'}</b> the following users?
+            <div className="mt-3 mb-3 border rounded bg-gray-50 overflow-hidden">
+              <table className="min-w-full text-xs">
+                <thead className="bg-gray-100 border-b">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-700">Name</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-700">Email</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(teams || []).filter((u: User) => selectedUserIds.includes(u._id)).map((u: User) => (
+                    <tr key={u._id} className="modal-table-row border-b last:border-0">
+                      <td className="modal-table-row px-3 py-2 whitespace-nowrap">{u.name || '-'}</td>
+                      <td className="modal-table-row px-3 py-2 whitespace-nowrap text-gray-600">{u.email || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end mt-4">
+            <Button 
+              variant="secondary" 
+              onClick={() => setBulkConfirm({ action: null, open: false })} 
+              disabled={activateLoading || resetPwLoading}
+              className="modal-btn modal-cancel-btn cursor-pointer focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
+            >
+              Cancel
+            </Button>
+            <Button
+              className="modal-btn cursor-pointer focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
+              onClick={async () => {
+                if (!bulkConfirm.action) return;
+                if (bulkConfirm.action === 'deactivate' || bulkConfirm.action === 'activate') {
+                  setActivateLoading(true);
+                  try {
+                    const res = await fetch('/api/users/bulk', {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userIds: selectedUserIds, action: bulkConfirm.action })
+                    });
+                    const result = await res.json();
+                    if (!res.ok) throw new Error(result.error || `Failed to ${bulkConfirm.action} users`);
+                    setToastMsg(`Users ${bulkConfirm.action === 'deactivate' ? 'deactivated' : 'activated'} successfully`);
+                    setToastType('success');
+                    setToastOpen(true);
+                    mutate('/api/users');
+                    setSelectedUserIds([]);
+                  } catch (err: any) {
+                    setToastMsg(err.message || `Failed to ${bulkConfirm.action} users`);
+                    setToastType('error');
+                    setToastOpen(true);
+                  } finally {
+                    setActivateLoading(false);
+                    setBulkConfirm({ action: null, open: false });
+                  }
+                } else if (bulkConfirm.action === 'resetPw') {
+                  setResetPwLoading(true);
+                  try {
+                    const res = await fetch('/api/users/bulk', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ userIds: selectedUserIds })
+                    });
+                    const result = await res.json();
+                    if (!res.ok) throw new Error(result.error || 'Failed to send reset emails');
+                    setToastMsg('Password reset emails sent');
+                    setToastType('success');
+                    setToastOpen(true);
+                    setSelectedUserIds([]);
+                  } catch (err: any) {
+                    setToastMsg(err.message || 'Failed to send reset emails');
+                    setToastType('error');
+                    setToastOpen(true);
+                  } finally {
+                    setResetPwLoading(false);
+                    setBulkConfirm({ action: null, open: false });
+                  }
+                }
+              }}
+              isLoading={activateLoading || resetPwLoading}
+              disabled={activateLoading || resetPwLoading}
+            >
+              Confirm
+            </Button>
+          </div>
+        </div>
+      </Modal>
       <Toast
         message={toastMsg}
         type={toastType}

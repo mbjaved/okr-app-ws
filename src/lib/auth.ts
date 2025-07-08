@@ -95,6 +95,12 @@ export const authOptions: AuthOptions = {
             throw new Error('Invalid login method. Please try signing in with a different method.');
           }
 
+          // Prevent login for deactivated users
+          if (user.active === false) {
+            console.log('⛔ User is deactivated:', user.email);
+            throw new Error('Your account has been deactivated. Please contact an administrator.');
+          }
+
           console.log('🔑 Comparing passwords...');
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
 
@@ -125,9 +131,19 @@ export const authOptions: AuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      profile(profile) {
+      async profile(profile) {
         if (!profile.email) {
           throw new Error('Google account has no email. Please use an account with a verified email address.');
+        }
+        // Defensive: Check if user is deactivated
+        const client = await clientPromise;
+        const db = client.db(dbName);
+        const user = await db.collection('users').findOne({
+          email: { $regex: new RegExp(`^${profile.email}$`, 'i') }
+        });
+        if (user && user.active === false) {
+          console.log('⛔ User is deactivated (Google OAuth):', profile.email);
+          throw new Error('Your account has been deactivated. Please contact an administrator.');
         }
         return {
           id: profile.sub,

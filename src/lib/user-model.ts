@@ -12,6 +12,7 @@ export type UserType = {
   designation?: string;
   manager?: string;
   okrsCount?: number;
+  active?: boolean; // Added: user is active (default true)
 };
 
 export const User = {
@@ -31,7 +32,9 @@ export const User = {
       designation: doc.designation || '-',
       manager: doc.manager || '',
       okrsCount: doc.okrsCount || 0,
+      active: doc.active !== false, // Default to true for legacy users
     };
+
   },
   // Additional user methods can be added here
 };

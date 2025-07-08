@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
+import "@/components/ui/ModalInteraction.css";
 import { Button } from "@/components/ui/button";
 
 interface InviteUsersModalProps {
@@ -50,7 +51,7 @@ export const InviteUsersModal: React.FC<InviteUsersModalProps> = ({ open, onClos
         </label>
         <textarea
           id="invite-emails"
-          className="w-full border border-gray-300 rounded-lg p-2 min-h-[80px] focus:outline-none focus:ring-2 focus:ring-blue-400 resize-y text-sm transition-shadow cursor-text focus:shadow-md hover:shadow-sm"
+          className="modal-table-row w-full border border-gray-300 rounded-lg p-2 min-h-[80px] focus:outline-none focus:ring-2 focus:ring-blue-400 resize-y text-sm transition-shadow cursor-text focus:shadow-md hover:shadow-sm"
           placeholder="e.g. user1@example.com, user2@example.com"
           value={input}
           onChange={e => setInput(e.target.value)}
@@ -63,14 +64,14 @@ export const InviteUsersModal: React.FC<InviteUsersModalProps> = ({ open, onClos
             variant="secondary"
             onClick={onClose}
             disabled={loading}
-            className="cursor-pointer focus:ring-2 focus:ring-blue-400 focus:outline-none hover:bg-gray-200 transition"
+            className="modal-btn modal-cancel-btn cursor-pointer focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
           >
             Cancel
           </Button>
           <Button
             onClick={handleInvite}
             isLoading={loading}
-            className="cursor-pointer focus:ring-2 focus:ring-blue-400 focus:outline-none hover:bg-blue-600 hover:text-white transition"
+            className="modal-btn cursor-pointer focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
           >
             Send Invites
           </Button>
