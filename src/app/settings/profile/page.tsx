@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Avatar from "@/components/ui/avatar";
+import { Toast } from "@/components/ui/Toast";
 
 // Best Practice: Typed user profile
 interface UserProfile {
@@ -21,7 +22,8 @@ interface UserProfile {
   avatarUrl?: string;
 }
 
-const ProfilePage: React.FC = () => {
+function ProfilePage() {
+  // --- ProfilePage function start ---
   // Auth wall: Only fetch/render if authenticated
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -33,7 +35,7 @@ const ProfilePage: React.FC = () => {
   const [managers, setManagers] = useState<UserProfile[]>([]);
   const [managersLoading, setManagersLoading] = useState(false);
   const [managersError, setManagersError] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ type: string; message: string } | null>(null);
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -67,6 +69,7 @@ const ProfilePage: React.FC = () => {
           setProfile(current);
           setForm({
             name: current.name,
+            username: current.username,
             email: current.email,
             department: current.department,
             designation: current.designation,
@@ -96,7 +99,7 @@ const ProfilePage: React.FC = () => {
   }, [session]);
 
   // Permissions: Only Admin/Manager can edit
-  const canEdit = profile?.role === "Admin" || profile?.role === "Manager";
+  const canEdit = true;
 
   // Handle input changes in form
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
@@ -110,6 +113,7 @@ const ProfilePage: React.FC = () => {
     setForm({
       name: profile?.name,
       email: profile?.email,
+      username: profile?.username,
       department: profile?.department,
       designation: profile?.designation,
       manager: profile?.manager,
@@ -122,6 +126,7 @@ const ProfilePage: React.FC = () => {
     setForm({
       name: profile?.name,
       email: profile?.email,
+      username: profile?.username,
       department: profile?.department,
       designation: profile?.designation,
       manager: profile?.manager,
@@ -130,6 +135,10 @@ const ProfilePage: React.FC = () => {
 
   // Save profile changes (PATCH logic implemented)
   async function handleSave() {
+    // If a new avatar file is selected, upload it first
+    if (avatarFile) {
+      await uploadAvatar();
+    }
     const errs = validate();
     if (Object.keys(errs).length > 0) {
       setToast({ type: 'error', message: Object.values(errs).join(' ') });
@@ -142,12 +151,15 @@ const ProfilePage: React.FC = () => {
     try {
       setLoading(true);
       const payload = {
+        _id: profile._id, // Always include _id for PATCH
         name: form.name,
+        username: form.username ?? profile.username ?? '',
         email: form.email,
         department: form.department,
         designation: form.designation,
         manager: form.manager,
       };
+      console.log('PATCH payload:', payload, 'profile:', profile);
       const res = await fetch('/api/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -159,7 +171,25 @@ const ProfilePage: React.FC = () => {
       } else {
         setEditMode(false);
         setToast({ type: 'success', message: '✔️ Profile updated successfully!' });
-        // Optionally refetch user data
+        // Always restore username and avatarUrl from returned data or previous state
+        setProfile((prev) => ({
+          ...prev,
+          ...data,
+          username: data.username || prev?.username || '',
+          avatarUrl: data.avatarUrl || avatarPreview || prev?.avatarUrl || '', // Prefer backend, then preview, then previous
+        }));
+        setForm((prev) => ({
+          ...prev,
+          name: data.name,
+          username: data.username || profile?.username || '',
+          email: data.email,
+          department: data.department,
+          designation: data.designation,
+          manager: data.manager,
+          avatarUrl: data.avatarUrl || avatarPreview || prev?.avatarUrl || '', // Prefer backend, then preview, then previous
+        }));
+        setAvatarPreview(null);
+        setAvatarFile(null);
       }
     } catch (err: any) {
       setToast({ type: 'error', message: err.message || 'Network error. Please try again.' });
@@ -171,6 +201,7 @@ const ProfilePage: React.FC = () => {
   function validate() {
     const errs: { [key: string]: string } = {};
     if (!form.name?.trim()) errs.name = "Name is required.";
+    if (!form.username?.trim()) errs.username = "Username is required.";
     if (!form.email?.trim()) errs.email = "Email is required.";
     // Add more validation as needed
     return errs;
@@ -220,16 +251,25 @@ const ProfilePage: React.FC = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to upload avatar');
       setToast({ type: 'success', message: 'Avatar updated!' });
+      // Always update profile and form with new avatarUrl and username instantly
+      setProfile((prev) => ({
+        ...prev,
+        avatarUrl: data.avatarUrl || avatarPreview || '',
+        username: prev?.username || data.username || '',
+        _id: prev?._id,
+      }));
+      setForm((prev) => ({
+        ...prev,
+        avatarUrl: data.avatarUrl || avatarPreview || '',
+        username: prev?.username || data.username || '',
+      }));
       setAvatarPreview(null);
       setAvatarFile(null);
-      setProfile({ ...profile, avatarUrl: data.avatarUrl });
       // Refresh session so TopNav updates avatar (next-auth best practice)
-      if (typeof window !== 'undefined' && typeof session?.update === 'function') {
-        await session.update();
+      if (typeof window !== 'undefined' && typeof (session as any)?.update === 'function') {
+        await (session as any).update();
       } else if (typeof router.refresh === 'function') {
         router.refresh();
-        // As a last resort, force a reload to guarantee TopNav updates
-        setTimeout(() => window.location.reload(), 250);
       }
     } catch (err: any) {
       setAvatarError(err.message || 'Failed to upload avatar.');
@@ -238,112 +278,177 @@ const ProfilePage: React.FC = () => {
     }
   }
 
-  // Early returns for loading/error states
-  if (status === 'loading' || loading) return <div>Loading...</div>;
-  if (error) return <div className="text-red-600 mt-10 text-center">{error}</div>;
-  if (!profile) return null;
-  if (!session) {
-    router.replace('/login');
-    return null;
-  }
-
-  // --- UI ---
   return (
-    <React.Fragment>
-      <main>
-      <Modal
-        open={showCancelModal}
-        title="Discard avatar changes?"
-        onClose={closeCancelModal}
-        actions={
-          <>
-            <button
-              className="px-4 py-2 rounded bg-gray-200 text-gray-700 mr-2"
-              onClick={closeCancelModal}
-            >
-              Cancel
-            </button>
-            <button
-              className="px-4 py-2 rounded bg-red-600 text-white"
-              onClick={confirmCancelAvatar}
-            >
-              Discard
-            </button>
-          </>
-        }
-      >
-        Are you sure you want to discard your avatar changes?
-      </Modal>
-      <div className="max-w-2xl mx-auto p-6 bg-white rounded shadow mt-8">
-        <div className="flex items-center gap-6 mb-8">
-          {/* Avatar */}
-          <div className="relative">
-            <Avatar src={avatarPreview || profile.avatarUrl} alt={profile.name} size="lg" />
-            {/* Avatar upload overlay and controls */}
-            {canEdit && !avatarPreview && (
-              <div className="absolute bottom-0 right-0">
+    <main className="relative max-w-3xl mx-auto flex flex-col items-center p-4 pt-8 md:p-8">
+      {/* Profile Card */}
+      <div className="relative w-full bg-white rounded-2xl shadow-xl flex flex-col items-center px-4 py-6 md:px-10 md:py-8">
+        {/* Avatar Section */}
+        <div className="flex flex-col items-center w-full mt-4 mb-4">
+          <div className="relative flex flex-col items-center">
+            <Avatar
+              user={{ ...profile, avatarUrl: avatarPreview || profile?.avatarUrl || undefined }}
+              src={avatarPreview || profile?.avatarUrl || undefined}
+              alt="Profile Avatar"
+              size="xl"
+              className="mx-auto shadow-lg border-4 border-white bg-gray-100"
+            />
+            {editMode && (
+              <label htmlFor="avatar-upload"
+                className="absolute bottom-2 right-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-2 shadow-lg cursor-pointer transition focus:ring-2 focus:ring-blue-300 border-2 border-white"
+                style={{ zIndex: 20 }}
+                aria-label="Edit profile image"
+                tabIndex={0}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.25 2.25 0 1 1 3.182 3.182L7.5 20.213 3 21l.787-4.5L16.863 4.487z" />
+                </svg>
                 <input
+                  id="avatar-upload"
                   type="file"
                   accept="image/*"
-                  onChange={handleAvatarFile}
                   className="hidden"
-                  id="avatar-upload"
+                  onChange={handleAvatarFile}
                   disabled={avatarUploading}
                 />
-                <label htmlFor="avatar-upload" className="cursor-pointer bg-blue-600 text-white rounded-full px-3 py-1 text-xs shadow hover:bg-blue-700 transition">
-                  Change
-                </label>
-              </div>
-            )}
-            {avatarError && <div className="text-red-600 text-xs mt-1">{avatarError}</div>}
-            {avatarUploading && !avatarPreview && (
-              <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-white/60 rounded-full z-20">
-                <span className="text-blue-600 text-xs">Uploading...</span>
-              </div>
-            )}
-            {avatarPreview && (
-              <div className="flex gap-2 mt-2">
-                <button className="bg-green-600 text-white px-3 py-1 rounded text-xs" onClick={uploadAvatar} disabled={avatarUploading}>{avatarUploading ? 'Uploading...' : 'Save'}</button>
-                <button className="bg-gray-300 text-gray-700 px-3 py-1 rounded text-xs" onClick={cancelAvatarPreview} disabled={avatarUploading}>Cancel</button>
-              </div>
+              </label>
             )}
           </div>
-          {/* Name and email */}
-          <div>
-            <div className="flex items-center mb-1">
-              <span className="font-bold text-2xl">{profile.name}</span>
-              {canEdit && !editMode && (
-                <button
-                  className="ml-3 p-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer hover:bg-blue-50"
-                  onClick={handleEditToggle}
-                  aria-label="Edit Profile"
-                  type="button"
-                  tabIndex={0}
-                >
-                  {/* Pencil icon SVG */}
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-blue-600">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.25 2.25 0 1 1 3.182 3.182L7.5 20.213l-4.182.545.545-4.182 12.999-12.089z" />
-                  </svg>
-                </button>
-              )}
+          {/* Remove Avatar Button (Text) */}
+          {(avatarPreview || (profile && profile.avatarUrl)) && editMode && (
+  <button
+    type="button"
+    className="mt-3 text-red-600 hover:underline text-sm font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-300 transition disabled:opacity-50"
+    aria-label="Remove profile image"
+    onClick={async () => {
+      setAvatarPreview(null);
+      setAvatarFile(null);
+      setAvatarUploading(true);
+      try {
+        const res = await fetch('/api/users', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ _id: profile?._id, avatarUrl: '' }),
+        });
+        if (!res.ok) throw new Error('Failed to remove avatar');
+        setProfile({ ...profile, avatarUrl: '' });
+        setToast({ type: 'success', message: 'Avatar removed.' });
+      } catch (err: any) {
+        setToast({ type: 'error', message: err.message || 'Failed to remove avatar.' });
+      } finally {
+        setAvatarUploading(false);
+      }
+    }}
+    title="Remove profile image"
+    disabled={avatarUploading}
+  >
+    Remove profile image
+  </button>
+)}
+          {avatarUploading && (
+            <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-full">
+              <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+              </svg>
             </div>
-            <div className="text-gray-500 text-sm">{profile.email}</div>
-          </div>
+          )}
+          {avatarError && <div className="text-red-500 text-xs mt-2">{avatarError}</div>}
         </div>
-        {/* Profile fields and controls */}
-        <div className="space-y-4 text-[16px]">
-          <div className="flex items-center justify-between">
-            <span className="font-medium">Username:</span>
-            <span>{profile.username || '-'}</span>
+        {/* Floating Edit Button with Modern Tooltip */}
+        {!editMode && canEdit && (
+          <div className="absolute top-4 right-4 flex flex-col items-center group">
+            <button
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
+              onClick={handleEditToggle}
+              aria-label="Edit Profile"
+              tabIndex={0}
+            >
+              {/* Pencil Icon */}
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6-6m2 2l2 2m-2-2l-2-2m-6 6l6-6" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.862 3.487a2.25 2.25 0 1 1 3.182 3.182L7.5 20.213l-4.182.545.545-4.182L16.862 3.487z" />
+              </svg>
+            </button>
+            {/* Custom Tooltip */}
+            <div className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 pointer-events-none transition-opacity absolute -top-9 right-1/2 translate-x-1/2 bg-gray-900 text-white text-xs rounded-lg px-3 py-1 shadow-lg z-20 whitespace-nowrap">
+              Edit Profile
+            </div>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="font-medium">Manager:</span>
+        )}
+        {/* Account Info */}
+        <h2 className="text-xl font-bold mb-4 text-blue-700 text-center mt-4">Account Info</h2>
+        <div className="space-y-4 max-w-md w-full mx-auto">
+          {/* Display Name */}
+          <div>
+            <label htmlFor="display-name-input" className="block text-xs font-semibold text-gray-500 mb-1">Display Name</label>
+            <input
+              id="display-name-input"
+              className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-blue-50/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-lg text-gray-900 transition placeholder-gray-400"
+              name="name"
+              value={editMode ? (form.name ?? profile?.name ?? '') : (profile?.name ?? '')}
+              onChange={handleChange}
+              placeholder="Full Name"
+              aria-label="Full Name"
+              maxLength={64}
+              readOnly={!editMode}
+              tabIndex={editMode ? 0 : -1}
+              autoComplete="off"
+            />
+          </div>
+          {/* Username */}
+          <div className="flex flex-col gap-1 w-full mb-4">
+            <label htmlFor="username" className="text-sm font-medium text-gray-700">Username</label>
+            <input
+              id="username"
+              type="text"
+              className={
+                editMode
+                  ? "w-full px-4 py-2 rounded-lg border border-gray-200 bg-blue-50/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-lg text-gray-900 transition placeholder-gray-400"
+                  : "w-full px-4 py-2 rounded-lg border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed outline-none text-lg transition placeholder-gray-300"
+              }
+              name="username"
+              value={editMode ? (form.username ?? profile?.username ?? '') : (profile?.username ?? '')}
+              onChange={editMode ? handleChange : undefined}
+              readOnly={!editMode}
+              tabIndex={editMode ? 0 : -1}
+              autoComplete="off"
+              aria-readonly={!editMode}
+              disabled={!editMode}
+            />
+            {editMode && (
+              <span className="text-xs text-gray-400 mt-1">Must be unique, 4–32 characters. Used for login and mentions.</span>
+            )}
+          </div>
+          {/* Email */}
+          <div>
+            <label htmlFor="email-input" className="block text-xs font-semibold text-gray-500 mb-1">Email</label>
+            <input
+              id="email-input"
+              type="email"
+              className={
+                editMode
+                  ? "w-full px-4 py-2 rounded-lg border border-gray-200 bg-blue-50/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-lg text-gray-900 transition placeholder-gray-400"
+                  : "w-full px-4 py-2 rounded-lg border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed outline-none text-lg transition placeholder-gray-300"
+              }
+              name="email"
+              value={editMode ? (form.email ?? profile?.email ?? '') : (profile?.email ?? '')}
+              onChange={editMode ? handleChange : undefined}
+              readOnly={!editMode}
+              tabIndex={editMode ? 0 : -1}
+              autoComplete="off"
+              aria-readonly={!editMode}
+              disabled={!editMode}
+            />
+          </div>
+          {/* Manager */}
+          <div>
+            <label htmlFor="manager-input" className="block text-xs font-semibold text-gray-500 mb-1">Manager</label>
             {editMode ? (
               managersLoading ? (
                 <span className="text-gray-400 text-sm">Loading...</span>
               ) : managersError ? (
                 <input
-                  className="border rounded px-2 py-1 text-sm w-40"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-blue-50/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-sm text-gray-900 transition placeholder-gray-400"
                   name="manager"
                   value={form.manager}
                   onChange={handleChange}
@@ -353,7 +458,7 @@ const ProfilePage: React.FC = () => {
                 />
               ) : (
                 <select
-                  className="border rounded px-2 py-1 text-sm w-44"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-blue-50/60 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none text-sm text-gray-900 transition"
                   name="manager"
                   value={form.manager}
                   onChange={handleChange}
@@ -367,54 +472,55 @@ const ProfilePage: React.FC = () => {
                 </select>
               )
             ) : (
-              <span>{(() => {
-                if (!profile?.manager || profile.manager === '-') return '-';
-                const mgr = managers.find((u: any) => String(u._id) === String(profile.manager));
-                return mgr ? (mgr.username || mgr.name || mgr.email) : profile.manager;
-              })() || '-'}</span>
+              <input
+                type="text"
+                className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-900 outline-none text-sm transition placeholder-gray-400"
+                value={(() => {
+                  if (!profile?.manager || profile.manager === '-') return '-';
+                  const mgr = managers.find((u: any) => String(u._id) === String(profile.manager));
+                  return (mgr ? (mgr.username || mgr.name || mgr.email) : profile.manager) || '-';
+                })()}
+                readOnly
+                disabled
+                tabIndex={-1}
+                aria-readonly="true"
+              />
             )}
           </div>
-          <div className="flex items-center justify-between">
-            <span className="font-medium">OKRs Created:</span>
-            <span>{profile?.okrsCount ?? 0}</span>
-          </div>
         </div>
-        {/* Save/Cancel controls for edit mode */}
-        {canEdit && editMode && (
-          <div className="flex gap-2 mt-8">
-            <button
-              type="button"
-              className="bg-blue-600 text-white h-10 px-5 rounded font-medium shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer"
-              onClick={handleSave}
-              aria-label="Save Changes"
-            >
-              Save Changes
-            </button>
-            <button
-              type="button"
-              className="bg-gray-100 text-gray-700 h-10 px-5 rounded font-medium border border-gray-200 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-200 cursor-pointer"
-              onClick={handleCancel}
-              aria-label="Cancel Editing"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="border border-blue-200 bg-white text-blue-600 h-10 px-5 rounded font-medium hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-200 cursor-pointer"
-              aria-label="Change Password"
-            >
-              Change Password
-            </button>
+        {/* Action Buttons */}
+        {editMode && (
+          <div className="flex justify-between items-center mt-6 gap-2">
+            <div className="flex gap-3">
+              <button
+                className="px-6 py-2 rounded-lg bg-green-600 text-white font-semibold shadow hover:bg-green-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-300 transition"
+                onClick={handleSave}
+                aria-label="Save Changes"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                className="px-6 py-2 rounded-lg bg-gray-200 text-gray-700 font-semibold shadow hover:bg-gray-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-gray-400 transition"
+                onClick={handleCancel}
+                aria-label="Cancel Editing"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         )}
-        {/* ARIA live region for toast notifications (accessibility best practice) */}
-        <div aria-live="polite" aria-atomic="true" className="sr-only">
-          {toast && toast.message}
-        </div>
       </div>
+      {/* Feedback Toasts */}
+      <Toast
+        message={toast?.message || ''}
+        type={toast?.type ?? 'info'}
+        open={!!toast}
+        onClose={() => setToast(null)}
+        duration={2500}
+      />
     </main>
-  </React.Fragment>
-);
-};
+  );
+}
 
 export default ProfilePage;

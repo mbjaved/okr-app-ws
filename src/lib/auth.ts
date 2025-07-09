@@ -118,7 +118,8 @@ export const authOptions: AuthOptions = {
             name: user.name || user.email.split('@')[0],
             role: user.role || 'User',
             department: user.department || null,
-            image: user.avatarUrl || null
+            image: user.avatarUrl || null,
+            avatarUrl: user.avatarUrl || null,
           };
         } catch (error) {
           console.error('❌ Error during authentication:', error);
@@ -150,6 +151,9 @@ export const authOptions: AuthOptions = {
           email: profile.email,
           name: profile.name,
           image: profile.picture,
+          avatarUrl: user?.avatarUrl || profile.picture || null,
+          role: user?.role || 'User',
+          department: user?.department || null,
         };
       },
     })
@@ -167,11 +171,34 @@ export const authOptions: AuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id;
-        session.user.role = token.role as string;
-        session.user.department = token.department as string;
-        (session.user as any)._id = token._id;
-        (session.user as any).avatarUrl = token.avatarUrl;
+        // Defensive: fetch latest user data from DB
+        try {
+          const { User } = await import("@/lib/user-model");
+          const user = await User.findById(token.id);
+          if (user) {
+            session.user.id = user._id.toString();
+            session.user.role = user.role;
+            session.user.department = user.department;
+            (session.user as any)._id = user._id;
+            (session.user as any).avatarUrl = user.avatarUrl || token.avatarUrl;
+            session.user.name = user.name;
+            session.user.email = user.email;
+          } else {
+            // fallback to token
+            session.user.id = token.id;
+            session.user.role = token.role as string;
+            session.user.department = token.department ? String(token.department) : '';
+            (session.user as any)._id = token._id;
+            (session.user as any).avatarUrl = token.avatarUrl;
+          }
+        } catch (e) {
+          // fallback to token if DB fetch fails
+          session.user.id = token.id;
+          session.user.role = token.role as string;
+          session.user.department = token.department as string;
+          (session.user as any)._id = token._id;
+          (session.user as any).avatarUrl = token.avatarUrl;
+        }
       }
       return session;
     },

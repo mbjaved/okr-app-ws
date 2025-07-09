@@ -36,5 +36,25 @@ export const User = {
     };
 
   },
+  async findById(id: string | ObjectId): Promise<UserType | null> {
+    const users = await getCollection("users");
+    const _id = typeof id === 'string' ? new ObjectId(id) : id;
+    const doc = await users.findOne({ _id });
+    if (!doc) return null;
+    return {
+      _id: doc._id,
+      name: doc.name,
+      email: doc.email,
+      password: doc.password,
+      role: doc.role || 'User',
+      avatarUrl: doc.avatarUrl || '',
+      department: doc.department || '-',
+      designation: doc.designation || '-',
+      manager: doc.manager || '',
+      okrsCount: doc.okrsCount || 0,
+      active: doc.active !== false, // Default to true for legacy users
+    };
+  },
+
   // Additional user methods can be added here
 };

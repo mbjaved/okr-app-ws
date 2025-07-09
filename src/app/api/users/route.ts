@@ -59,10 +59,14 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const usersCol = await getCollection("users");
-    const { id, ...fields } = await req.json();
+    const body = await req.json();
+    const id = body.id || body._id;
+    const fields = { ...body };
+    delete fields.id;
+    delete fields._id;
     if (!id) return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     // Only allow certain fields to be updated
-    const allowed = ["name", "email", "department", "designation", "manager", "active"];
+    const allowed = ["name", "email", "department", "designation", "manager", "active", "avatarUrl"];
     const update: Record<string, any> = {};
     for (const key of allowed) {
       if (fields[key] !== undefined) update[key] = fields[key];
