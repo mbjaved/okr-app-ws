@@ -39,7 +39,7 @@ export default async function UserProfilePage({ params, searchParams }: { params
           <>
             <div className="flex items-center gap-4">
               <Avatar src={user?.avatarUrl || undefined} alt={user?.name || 'User'} size="lg" />
-              <Badge color={user?.status === 'active' ? 'green' : 'red'}>{user?.status || 'Unknown'}</Badge>
+              <Badge color={user?.active !== false ? 'green' : 'red'}>{user?.active !== false ? 'Active' : 'Inactive'}</Badge>
             </div>
             <div className="flex flex-col gap-1 w-full text-center">
               <span className="text-gray-700 font-semibold">{user?.name || 'Unknown User'}</span>

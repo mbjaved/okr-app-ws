@@ -14,13 +14,30 @@ export type TeamUser = {
   department?: string;
   designation?: string;
   okrsCount?: number;
+  active?: boolean; // Added: user is active (default true)
 };
 
 export async function GET(req: NextRequest) {
   const usersCol = await getCollection("users");
   // For demo, fetch all users. In production, add auth checks and pagination.
   const users = await usersCol.find({}).toArray();
-  // Map to TeamUser type and add mock OKR count if missing
+  // Aggregate OKRs count per user (robust, modular, typed)
+  const okrsCol = await getCollection("okrs");
+  // Get all OKRs, only owners field
+  const allOkrs = await okrsCol.find({}, { projection: { owners: 1 } }).toArray();
+  // Build a map of userId to OKR count
+  const okrsCountMap: Record<string, number> = {};
+  for (const okr of allOkrs) {
+    if (Array.isArray(okr.owners)) {
+      for (const owner of okr.owners) {
+        const ownerId = typeof owner === 'object' && owner._id ? owner._id.toString() : owner?.toString();
+        if (ownerId) {
+          okrsCountMap[ownerId] = (okrsCountMap[ownerId] || 0) + 1;
+        }
+      }
+    }
+  }
+  // Map to TeamUser type and add OKR count
   const teamUsers: TeamUser[] = users.map((u: any) => ({
     _id: u._id,
     name: u.name,
@@ -30,8 +47,9 @@ export async function GET(req: NextRequest) {
     role: u.role || "User",
     department: u.department || "-",
     designation: u.designation || "-",
-    okrsCount: u.okrsCount || Math.floor(Math.random() * 5) + 1,
+    okrsCount: okrsCountMap[u._id.toString()] || 0,
     manager: u.manager || null,
+    active: u.active !== false, // Default to true for legacy users
   }));
   return NextResponse.json(teamUsers);
 }
@@ -41,10 +59,14 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const usersCol = await getCollection("users");
-    const { id, ...fields } = await req.json();
+    const body = await req.json();
+    const id = body.id || body._id;
+    const fields = { ...body };
+    delete fields.id;
+    delete fields._id;
     if (!id) return NextResponse.json({ error: "User ID is required" }, { status: 400 });
     // Only allow certain fields to be updated
-    const allowed = ["name", "email", "department", "designation", "manager"];
+    const allowed = ["name", "email", "department", "designation", "manager", "active", "avatarUrl"];
     const update: Record<string, any> = {};
     for (const key of allowed) {
       if (fields[key] !== undefined) update[key] = fields[key];
