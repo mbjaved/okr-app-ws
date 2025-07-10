@@ -1,0 +1,9 @@
+.analytics-chart-interactive:hover, .analytics-chart-interactive:focus {
+  filter: brightness(0.95) drop-shadow(0 2px 8px rgba(37,99,235,0.12));
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+.analytics-chart-interactive {
+  cursor: pointer;
+  transition: filter 0.2s, outline 0.2s;
+}
