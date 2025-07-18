@@ -1,6 +1,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { OkrDetailsActions } from './OkrDetailsActions.client';
+import { CommentSection } from '@/components/okr/CommentSection';
 
 
 // Robustly extract MongoDB ObjectId from slug or [slug]-[id] pattern
@@ -49,6 +50,7 @@ async function fetchOkrById(id: string, cookie: string) {
 export default async function Page(context: any) {
   let users: any[] = [];
   let sessionUserId: string | null = null;
+  let currentUser: any = null;
   const params = await context.params;
   // Patch: cookies() returns a ReadonlyRequestCookies object, not a string
   const cookiesApi = await import('next/headers').then(m => m.cookies());
@@ -96,11 +98,31 @@ export default async function Page(context: any) {
     let sessionUser = null;
     try {
       const currentUserRes = await fetch(`${BASE_URL}/api/users/current`, { headers: { cookie: cookieString } });
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[OKR DETAILS SSR] Current user fetch result:', {
+          status: currentUserRes.status,
+          ok: currentUserRes.ok,
+          cookieString: cookieString.substring(0, 100) + '...'
+        });
+      }
       if (currentUserRes.ok) {
         sessionUser = await currentUserRes.json();
         sessionUserId = sessionUser._id?.toString?.() || null;
+        currentUser = sessionUser;
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[OKR DETAILS SSR] Current user set:', { currentUser: !!currentUser, sessionUserId });
+        }
+      } else {
+        const errorText = await currentUserRes.text();
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('[OKR DETAILS SSR] Current user fetch failed:', { status: currentUserRes.status, error: errorText });
+        }
       }
-    } catch {}
+    } catch (fetchError) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('[OKR DETAILS SSR] Current user fetch exception:', fetchError);
+      }
+    }
   } catch (err: any) {
     error = err.message || 'Not found';
     if (process.env.NODE_ENV !== 'production') {
@@ -235,12 +257,20 @@ export default async function Page(context: any) {
         )}
         {/* Description */}
         {okr.description && (
-          <div className="mb-4">
+          <div className="mb-8">
             <h2 className="text-lg font-semibold text-neutral-800 mb-2">Description</h2>
             <div className="prose prose-sm max-w-none text-gray-700">{okr.description}</div>
           </div>
         )}
-        {/* TODO: Activity log, edit modal, actions menu, comments, etc. */}
+        
+        {/* Comments Section */}
+        <div className="border-t border-gray-200 pt-8">
+          <CommentSection 
+            okrId={id} 
+            currentUser={currentUser} 
+            users={users} 
+          />
+        </div>
       </div>
     </main>
   );

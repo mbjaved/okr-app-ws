@@ -153,7 +153,7 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
         if (initialData && Array.isArray(initialData.owners)) {
           (initialData.owners as any[]).forEach(o => {
             const ownerId = o._id || o.userId || o;
-            if (!mappedUsers.some(u => u.value === ownerId)) {
+            if (!mappedUsers.some((u: any) => u.value === ownerId)) {
               mappedUsers.push({
                 value: ownerId,
                 label: o.name || ownerId,
@@ -307,7 +307,6 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
           <div className="flex flex-col gap-1">
             <span>Owners <span className="text-red-500">*</span></span>
             <div className="mb-4">
-              {console.log('[OKR DEBUG] MultiSelect props:', { options: users, value: owners })}
               <MultiSelect
                 label="Owners"
                 options={users}

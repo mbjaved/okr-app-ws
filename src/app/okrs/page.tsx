@@ -867,7 +867,7 @@ useEffect(() => {
                       createdByInitials={okr.createdByInitials}
                       goalType={okr.goalType}
                       slug={okr.slug || ''}  // TODO: Enforce slug presence at data/model layer
-                      _id={okr._id || ''}    // TODO: Enforce _id presence at data/model layer
+                      _id={okr._id || ''} 
                     />
                     <div className="absolute top-2 right-2">
                       <OkrCardMenu
