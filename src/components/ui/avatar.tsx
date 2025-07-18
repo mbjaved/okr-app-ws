@@ -10,7 +10,7 @@ interface AvatarProps {
   src?: string;
   username?: string;
   alt?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   className?: string;
   title?: string;
   bgColor?: string;
@@ -21,6 +21,7 @@ const sizeMap = {
   sm: "w-8 h-8 text-xs",
   md: "w-12 h-12 text-sm",
   lg: "w-20 h-20 text-lg",
+  xl: "w-36 h-36 text-3xl",
 };
 
 // Generate initials from a name (take first letter of each word, max 2)

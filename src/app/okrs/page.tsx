@@ -134,7 +134,27 @@ export default function OKRsPage() {
   
   const [filterCreatedBy, setFilterCreatedBy] = useState<string[]>([]);
 const [filterOwners, setFilterOwners] = useState<string[]>([]);
-  const [filterStatus, setFilterStatus] = useState("");
+  // --- Sync status query param with filterStatus ---
+  const statusParam = searchParams?.get('status') || '';
+  const [filterStatus, setFilterStatus] = useState(statusParam);
+
+  // Keep filterStatus in sync with query param (on navigation)
+  useEffect(() => {
+    if (statusParam !== filterStatus) setFilterStatus(statusParam);
+  }, [statusParam]);
+
+  // When filterStatus changes (via UI), update the URL query param
+  useEffect(() => {
+    if (filterStatus !== statusParam) {
+      const params = new URLSearchParams(Array.from(searchParams?.entries?.() || []));
+      if (filterStatus) {
+        params.set('status', filterStatus);
+      } else {
+        params.delete('status');
+      }
+      router.replace(`?${params.toString()}`);
+    }
+  }, [filterStatus]);
   const [okrs, setOkrs] = useState<Okr[]>([]);
   const [archivedOkrs, setArchivedOkrs] = useState<Okr[]>([]);
   const [deletedOkrs, setDeletedOkrs] = useState<Okr[]>([]);

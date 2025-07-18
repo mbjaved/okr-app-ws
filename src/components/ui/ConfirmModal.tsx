@@ -1,5 +1,7 @@
 import React from "react";
 import { Modal } from "./Modal";
+import { Button } from "./button";
+import "./ModalInteraction.css";
 
 export interface ConfirmModalProps {
   open: boolean;
@@ -40,16 +42,22 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       title={null}
       onClose={onCancel}
       actions={[
-        <button key="cancel" className="px-4 py-2 rounded border border-gray-300 text-gray-700 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors cursor-pointer" onClick={onCancel}>Cancel</button>,
-        <button
-          key="confirm"
-          className={`px-4 py-2 rounded text-white font-semibold focus:outline-none focus:ring-2 focus:ring-red-400 transition-colors ml-2 ${confirmButtonClass} ${canConfirm ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+        <Button
+          variant="secondary"
+          className="modal-btn modal-cancel-btn"
+          onClick={onCancel}
+        >
+          Cancel
+        </Button>,
+        <Button
+          variant="primary"
+          className={`modal-btn ${confirmButtonClass} ${canConfirm ? '' : 'opacity-50 cursor-not-allowed'}`}
           onClick={onConfirm}
           disabled={!canConfirm}
           title={confirmButtonLabel}
         >
           {confirmButtonLabel}
-        </button>
+        </Button>
       ]}
     >
       {warning ? (
@@ -78,7 +86,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           <input
             id="confirm-modal-input"
             type="text"
-            className={warning ? "border border-yellow-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-yellow-400" : "w-full border rounded px-2 py-1 mt-2"}
+            className={warning ? "modal-table-row border border-yellow-300 rounded px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-yellow-400" : "modal-table-row w-full border rounded px-2 py-1 mt-2"}
             placeholder={confirmPlaceholder || confirmText}
             value={input}
             onChange={e => setInput(e.target.value)}

@@ -1,0 +1,21 @@
+.monthInput {
+  cursor: pointer;
+}
+
+/* Chrome/Safari: calendar icon */
+.monthInput::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: brightness(0.9);
+  transition: filter 0.2s;
+}
+
+
+/* Firefox: calendar icon */
+.monthInput::-moz-calendar-picker-indicator {
+  cursor: pointer;
+}
+
+/* Edge: calendar icon */
+.monthInput::-ms-input-placeholder {
+  cursor: pointer;
+}

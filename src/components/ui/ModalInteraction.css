@@ -1,0 +1,35 @@
+/* Centralized modal interaction rules for all confirmation modals */
+
+.modal-btn {
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.modal-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px #60a5fa33;
+}
+.modal-btn:hover:not(:disabled), .modal-btn:focus-visible:not(:disabled) {
+  background: #2563eb;
+  color: #fff;
+}
+.modal-btn:disabled, .modal-btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.modal-cancel-btn:hover:not(:disabled), .modal-cancel-btn:focus-visible:not(:disabled) {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.modal-table-row {
+  transition: background 0.15s;
+  cursor: pointer;
+}
+.modal-table-row:hover, .modal-table-row:focus-within {
+  background: #F0F6FF;
+}
+.modal-table-row.selected {
+  background: #D6EFFF;
+}

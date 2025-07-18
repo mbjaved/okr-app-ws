@@ -95,6 +95,12 @@ export const authOptions: AuthOptions = {
             throw new Error('Invalid login method. Please try signing in with a different method.');
           }
 
+          // Prevent login for deactivated users
+          if (user.active === false) {
+            console.log('⛔ User is deactivated:', user.email);
+            throw new Error('Your account has been deactivated. Please contact an administrator.');
+          }
+
           console.log('🔑 Comparing passwords...');
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
 
@@ -112,7 +118,8 @@ export const authOptions: AuthOptions = {
             name: user.name || user.email.split('@')[0],
             role: user.role || 'User',
             department: user.department || null,
-            image: user.avatarUrl || null
+            image: user.avatarUrl || null,
+            avatarUrl: user.avatarUrl || null,
           };
         } catch (error) {
           console.error('❌ Error during authentication:', error);
@@ -125,15 +132,28 @@ export const authOptions: AuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      profile(profile) {
+      async profile(profile) {
         if (!profile.email) {
           throw new Error('Google account has no email. Please use an account with a verified email address.');
+        }
+        // Defensive: Check if user is deactivated
+        const client = await clientPromise;
+        const db = client.db(dbName);
+        const user = await db.collection('users').findOne({
+          email: { $regex: new RegExp(`^${profile.email}$`, 'i') }
+        });
+        if (user && user.active === false) {
+          console.log('⛔ User is deactivated (Google OAuth):', profile.email);
+          throw new Error('Your account has been deactivated. Please contact an administrator.');
         }
         return {
           id: profile.sub,
           email: profile.email,
           name: profile.name,
           image: profile.picture,
+          avatarUrl: user?.avatarUrl || profile.picture || null,
+          role: user?.role || 'User',
+          department: user?.department || null,
         };
       },
     })
@@ -151,11 +171,34 @@ export const authOptions: AuthOptions = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id;
-        session.user.role = token.role as string;
-        session.user.department = token.department as string;
-        (session.user as any)._id = token._id;
-        (session.user as any).avatarUrl = token.avatarUrl;
+        // Defensive: fetch latest user data from DB
+        try {
+          const { User } = await import("@/lib/user-model");
+          const user = await User.findById(token.id);
+          if (user) {
+            session.user.id = user._id.toString();
+            session.user.role = user.role;
+            session.user.department = user.department;
+            (session.user as any)._id = user._id;
+            (session.user as any).avatarUrl = user.avatarUrl || token.avatarUrl;
+            session.user.name = user.name;
+            session.user.email = user.email;
+          } else {
+            // fallback to token
+            session.user.id = token.id;
+            session.user.role = token.role as string;
+            session.user.department = token.department ? String(token.department) : '';
+            (session.user as any)._id = token._id;
+            (session.user as any).avatarUrl = token.avatarUrl;
+          }
+        } catch (e) {
+          // fallback to token if DB fetch fails
+          session.user.id = token.id;
+          session.user.role = token.role as string;
+          session.user.department = token.department as string;
+          (session.user as any)._id = token._id;
+          (session.user as any).avatarUrl = token.avatarUrl;
+        }
       }
       return session;
     },
