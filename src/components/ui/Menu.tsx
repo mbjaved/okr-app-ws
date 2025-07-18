@@ -4,13 +4,54 @@ interface MenuProps {
   trigger: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  align?: 'left' | 'right' | 'center';
 }
 
 const MenuContext = createContext<{ closeMenu: () => void }>({ closeMenu: () => {} });
 
-export const Menu: React.FC<MenuProps> = ({ trigger, children, className }) => {
+export const Menu: React.FC<MenuProps> = ({ trigger, children, className, align = 'right' }) => {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLSpanElement>(null);
+  const [smartAlign, setSmartAlign] = useState<'left' | 'right' | 'center'>(align);
+  
+  // Debug logging
+  console.log('Menu component - align prop:', align);
+
+  // Smart positioning logic
+  useEffect(() => {
+    if (open && triggerRef.current) {
+      const triggerRect = triggerRef.current.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const dropdownWidth = align === 'center' ? 320 : 160;
+      
+      let optimalAlign = align;
+      
+      if (align === 'center') {
+        // Check if centered dropdown would be cut off
+        const centerLeft = triggerRect.left + (triggerRect.width / 2) - (dropdownWidth / 2);
+        const centerRight = centerLeft + dropdownWidth;
+        
+        if (centerLeft < 0) {
+          // Would be cut off on left, align to left
+          optimalAlign = 'left';
+        } else if (centerRight > viewportWidth) {
+          // Would be cut off on right, align to right
+          optimalAlign = 'right';
+        }
+      }
+      
+      console.log('Smart positioning:', {
+        originalAlign: align,
+        optimalAlign,
+        triggerRect,
+        viewportWidth,
+        dropdownWidth
+      });
+      
+      setSmartAlign(optimalAlign);
+    }
+  }, [open, align]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -31,13 +72,41 @@ export const Menu: React.FC<MenuProps> = ({ trigger, children, className }) => {
   return (
     <MenuContext.Provider value={{ closeMenu: () => setOpen(false) }}>
       <div className={className} ref={menuRef} style={{ position: "relative", display: "inline-block" }}>
-        <span onClick={() => setOpen((prev) => !prev)} style={{ cursor: "pointer" }}>
+        <span ref={triggerRef} onClick={() => setOpen((prev) => !prev)} style={{ cursor: "pointer" }}>
           {trigger}
         </span>
         {open && (
           <div
-            className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-50"
-            style={{ minWidth: 120 }}
+            className="absolute mt-2 bg-white border rounded shadow-lg z-50"
+            style={{
+              minWidth: align === 'center' ? 320 : 120,
+              width: align === 'center' ? 320 : 160,
+              ...(smartAlign === 'center' ? {
+                left: '50%',
+                transform: 'translateX(-50%)',
+                right: 'auto'
+              } : smartAlign === 'left' ? {
+                left: 0,
+                right: 'auto'
+              } : {
+                right: 0,
+                left: 'auto'
+              })
+            }}
+            data-menu-align={smartAlign}
+            ref={(el) => {
+              if (el) {
+                console.log('Menu dropdown rendered with:', {
+                  originalAlign: align,
+                  smartAlign,
+                  className: el.className,
+                  style: el.style.cssText,
+                  computedLeft: window.getComputedStyle(el).left,
+                  computedRight: window.getComputedStyle(el).right,
+                  transform: window.getComputedStyle(el).transform
+                });
+              }
+            }}
           >
             {children}
           </div>

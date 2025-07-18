@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, MenuItem } from "./ui/Menu";
 import Avatar from "./ui/avatar";
+import { NotificationBell } from "./ui/NotificationBell";
 import { useSession, signOut } from "next-auth/react";
 
 // You can replace this with your mascot/logo as needed
@@ -79,8 +80,12 @@ const TopNav: React.FC = () => {
           </Link>
         ))}
       </div>
-      {/* User avatar/profile dropdown */}
-      <div className="flex items-center gap-2">
+      {/* Notifications and User Menu */}
+      <div className="flex items-center gap-3">
+        {/* Notification Bell */}
+        <NotificationBell />
+        
+        {/* User Menu */}
         <Menu
           trigger={
             <span aria-label="Open user menu" tabIndex={0} className="outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
