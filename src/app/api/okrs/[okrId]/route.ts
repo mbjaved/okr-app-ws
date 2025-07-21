@@ -38,6 +38,8 @@ interface OkrUpdatePayload {
   startDate?: string;
   endDate?: string;
   keyResults?: KeyResult[];
+  department?: string;
+  status?: "on_track" | "off_track" | "at_risk" | "completed";
 }
 
 // Helper: Get userId from session
@@ -195,6 +197,7 @@ export async function PUT(req: NextRequest, context: any) {
   if (typeof data.startDate === 'string' && data.startDate) update.startDate = data.startDate;
   if (typeof data.endDate === 'string' && data.endDate) update.endDate = data.endDate;
   if (Array.isArray(data.keyResults)) update.keyResults = data.keyResults;
+  if (typeof data.department === 'string') update.department = data.department;
   // Allow status update (Best_Practices.md: Typed API contracts, robust payloads)
   if (typeof data.status === 'string' && ['active', 'archived', 'on_track', 'off_track', 'at_risk', 'completed', 'deleted'].includes(data.status)) {
     update.status = data.status;

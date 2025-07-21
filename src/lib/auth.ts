@@ -178,7 +178,7 @@ export const authOptions: AuthOptions = {
           if (user) {
             session.user.id = user._id.toString();
             session.user.role = user.role;
-            session.user.department = user.department;
+            session.user.department = user.department || '';
             (session.user as any)._id = user._id;
             (session.user as any).avatarUrl = user.avatarUrl || token.avatarUrl;
             session.user.name = user.name;

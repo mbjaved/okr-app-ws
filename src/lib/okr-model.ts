@@ -37,6 +37,7 @@ export interface OKR {
   status: OKRStatus;
   startDate: Date;
   endDate: Date;
+  department?: string | null; // Department ID or null for existing OKRs
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,6 +53,7 @@ export function createOKR(params: {
   status?: OKRStatus;
   startDate?: Date;
   endDate?: Date;
+  department?: string | null;
 }): OKR {
   const now = new Date();
   return {
@@ -64,6 +66,7 @@ export function createOKR(params: {
     status: params.status || "active",
     startDate: params.startDate || now,
     endDate: params.endDate || new Date(now.getFullYear(), now.getMonth() + 3, now.getDate()), // Default to 3 months from now
+    department: params.department || null,
     createdAt: now,
     updatedAt: now,
   };

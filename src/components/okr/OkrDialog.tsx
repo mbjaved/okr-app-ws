@@ -42,6 +42,7 @@ type OkrUpdatePayload = {
   endDate?: string;
   keyResults?: KeyResult[];
   status?: "on_track" | "at_risk" | "off_track" | "completed";
+  department?: string;
 };
 
 interface OkrDialogProps {
@@ -66,6 +67,8 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
   const [keyResults, setKeyResults] = useState<KeyResult[]>([]);
   const [users, setUsers] = useState<MultiSelectOption[]>([]);
   const [usersError, setUsersError] = useState("");
+  const [department, setDepartment] = useState("");
+  const [departments, setDepartments] = useState<Department[]>([]);
 
   // Sync state from initialData
   // Owners prefill: ensure owners/ownersData are set only after users are loaded and mapped
@@ -82,10 +85,8 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
     const mappedOwners = enrichOwnersWithUserData(
       initialData.owners && initialData.owners.length > 0
         ? initialData.owners
-        : initialData.owner
-          ? [initialData.owner]
-          : [],
-      users
+        : [],
+      users.map(u => ({ _id: u.value, name: u.label, avatarUrl: u.avatarUrl }))
     );
     const mappedOwnerIds = mappedOwners.map(o => o._id);
     // Fallback: If no valid owners, use current user
@@ -128,6 +129,7 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
     setStartDate(typeof initialData?.startDate === 'string' ? initialData.startDate.slice(0, 10) : "");
     setEndDate(typeof initialData?.endDate === 'string' ? initialData.endDate.slice(0, 10) : "");
     setKeyResults(Array.isArray(initialData?.keyResults) ? initialData.keyResults : []);
+    setDepartment(initialData?.department || '');
     setErrors({});
     // Reset debug flag on close
     if (!open && (window as any).__okr_debug_logged) (window as any).__okr_debug_logged = false;
@@ -169,6 +171,20 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
     }
     if (open) fetchUsers();
   }, [open, initialData]);
+
+  useEffect(() => {
+    async function fetchDepartments() {
+      try {
+        const res = await fetch("/api/departments");
+        if (!res.ok) throw new Error("Failed to fetch departments");
+        const data = await res.json();
+        setDepartments(data);
+      } catch (err: any) {
+        console.error("Error fetching departments:", err);
+      }
+    }
+    if (open) fetchDepartments();
+  }, [open]);
 
   // Validation
   function validate() {
@@ -254,6 +270,7 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
         startDate,
         endDate,
         keyResults,
+        department,
       };
       
       await onSave(payload);
@@ -346,6 +363,21 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
               <option value="at_risk">At Risk</option>
               <option value="off_track">Off Track</option>
               <option value="completed">Completed</option>
+            </select>
+          </label>
+          <label className="flex flex-col gap-1">
+            <span>Department</span>
+            <select
+              className="border rounded px-2 py-1 w-full cursor-pointer"
+              value={department}
+              onChange={e => setDepartment(e.target.value)}
+              aria-invalid={!!errors.department}
+              aria-describedby={errors.department ? 'department-error' : undefined}
+            >
+              <option value="">Select Department</option>
+              {departments.map(dept => (
+                <option key={dept._id} value={dept.name}>{dept.name}</option>
+              ))}
             </select>
           </label>
           <div className="flex gap-4">
