@@ -182,6 +182,10 @@ export default async function Page(context: any) {
               {okr.goalType && (
                 <span className="inline-block bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium border border-gray-200">{okr.goalType === 'individual' ? 'Individual Goal' : okr.goalType === 'team' ? 'Team Goal' : okr.goalType}</span>
               )}
+              {/* Department */}
+              {okr.department && (
+                <span className="inline-block bg-[#E8F4FD] text-[#0071E1] px-2 py-0.5 rounded-full font-medium border border-[#B3D9F2]" aria-label={`Department: ${okr.department}`}>{okr.department}</span>
+              )}
             </div>
           </div>
           {/* Actions menu in client boundary */}

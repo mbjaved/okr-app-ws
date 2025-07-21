@@ -36,6 +36,7 @@ interface OkrCardProps {
   owners?: Array<{ _id: string; name?: string; avatarUrl?: string }>;
   description?: string;
   goalType?: string;
+  department?: string;
   createdBy?: string;
   createdByAvatarUrl?: string;
   createdByInitials?: string;
@@ -72,6 +73,7 @@ export const OkrCard: React.FC<OkrCardProps> = ({
   owners = [], // Initialize empty array for new format
   description,
   goalType,
+  department,
   createdBy,
   createdByAvatarUrl,
   createdByInitials,
@@ -231,9 +233,13 @@ export const OkrCard: React.FC<OkrCardProps> = ({
               <span className="inline-block bg-[#FAFAFB] text-[#000C2C] px-2 py-0.5 rounded-full text-[11px] font-medium border border-[#B3BCC5] ml-2" aria-label={`Goal type: ${goalType}`}>{goalType === "team" ? "Team Goal" : goalType === "individual" ? "Individual Goal" : goalType}</span>
             )}
           </div>
-          {/* Right: Due date & Status */}
+          {/* Right: Due date, Department & Status */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <span className="inline-block bg-[#FAFAFB] text-[#0071E1] px-2 py-0.5 rounded-full font-medium border border-[#B3BCC5]" aria-label={`Due date: ${dueDate}`}>Due: {dueDate}</span>
+            {/* Department badge */}
+            {department && (
+              <span className="inline-block bg-[#E8F4FD] text-[#0071E1] px-2 py-0.5 rounded-full font-medium border border-[#B3D9F2]" aria-label={`Department: ${department}`}>{department}</span>
+            )}
             <span className={`inline-block px-2 py-0.5 rounded-full font-semibold border text-xs capitalize ${statusPill[status] || "bg-gray-100 text-gray-600 border-gray-200"}`} aria-label={`Status: ${status}`}>{
               status === 'on_track' ? 'On Track' :
               status === 'at_risk' ? 'At Risk' :

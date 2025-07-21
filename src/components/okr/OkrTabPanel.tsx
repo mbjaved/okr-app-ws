@@ -23,6 +23,7 @@ interface Okr {
   // New owners field for multi-owner support
   owners?: Array<{ _id: string; name?: string; avatarUrl?: string }>;
   goalType?: string;
+  department?: string;
   // Added for avatar consistency
   createdBy?: string;
   createdByAvatarUrl?: string;
@@ -91,6 +92,7 @@ export const OkrTabPanel: React.FC<OkrTabPanelProps> = ({
                 createdByAvatarUrl={okr.createdByAvatarUrl}
                 createdByInitials={okr.createdByInitials}
                 goalType={okr.goalType}
+                department={okr.department}
                 slug={okr.slug || ''}
                 _id={okr._id}
               />

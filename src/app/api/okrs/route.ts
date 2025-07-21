@@ -95,6 +95,7 @@ export async function POST(req: NextRequest) {
     status: data.status,
     startDate: data.startDate ? new Date(data.startDate) : undefined,
     endDate: data.endDate ? new Date(data.endDate) : undefined,
+    department: data.department || null, // Add department field
   });
   const okrs = await getCollection("okrs");
   const result = await okrs.insertOne(okr);

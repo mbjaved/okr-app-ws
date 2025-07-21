@@ -51,6 +51,7 @@ interface Okr {
   owners?: OwnerData[];
   goalType?: string;
   department?: string; // Added for filter compatibility
+  slug?: string; // Add slug field for navigation
 }
 
 // Deduplicate and disambiguate user options for Created By MultiSelect
@@ -131,17 +132,33 @@ export default function OKRsPage() {
   const [filterDepartment, setFilterDepartment] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [filterQuarter, setFilterQuarter] = useState("");
-  
   const [filterCreatedBy, setFilterCreatedBy] = useState<string[]>([]);
-const [filterOwners, setFilterOwners] = useState<string[]>([]);
+  const [filterOwners, setFilterOwners] = useState<string[]>([]);
   // --- Sync status query param with filterStatus ---
   const statusParam = searchParams?.get('status') || '';
   const [filterStatus, setFilterStatus] = useState(statusParam);
+  const [departments, setDepartments] = useState<{_id: string, name: string}[]>([]);
 
   // Keep filterStatus in sync with query param (on navigation)
   useEffect(() => {
     if (statusParam !== filterStatus) setFilterStatus(statusParam);
   }, [statusParam]);
+
+  // Fetch departments for filter dropdown
+  useEffect(() => {
+    async function fetchDepartments() {
+      try {
+        const res = await fetch("/api/departments");
+        if (res.ok) {
+          const data = await res.json();
+          setDepartments(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch departments:", error);
+      }
+    }
+    fetchDepartments();
+  }, []);
 
   // When filterStatus changes (via UI), update the URL query param
   useEffect(() => {
@@ -170,15 +187,15 @@ const [filterOwners, setFilterOwners] = useState<string[]>([]);
     return allStatuses.sort((a, b) => a.localeCompare(b));
   }, [okrs, archivedOkrs, deletedOkrs]);
   // Only count filterCreatedBy if it has selected values
-const activeFiltersCount = [
-  filterDate,
-  filterDepartment,
-  filterCategory,
-  filterQuarter,
-  filterStatus,
-  ...(filterCreatedBy && filterCreatedBy.length > 0 ? [1] : []),
-  ...(filterOwners && filterOwners.length > 0 ? [1] : [])
-].filter(Boolean).length;
+  const activeFiltersCount = [
+    filterDate,
+    filterDepartment,
+    filterCategory,
+    filterQuarter,
+    filterStatus,
+    ...(filterCreatedBy && filterCreatedBy.length > 0 ? [1] : []),
+    ...(filterOwners && filterOwners.length > 0 ? [1] : [])
+  ].filter(Boolean).length;
   const filterPanelRef = useRef<HTMLDivElement>(null);
   const [sortBy, setSortBy] = useState("recent");
   const [loading, setLoading] = useState(true);
@@ -273,9 +290,9 @@ const activeFiltersCount = [
 
   // Update OKR
   // Always generate a slug for OKR before PUT (update)
-const handleUpdateOkr = async (okr: any, prevStatus?: string) => {
-  const slug = generateSlug(okr.objective || okr.name || 'okr');
-  const okrWithSlug = { ...okr, slug };
+  const handleUpdateOkr = async (okr: any, prevStatus?: string) => {
+    const slug = generateSlug(okr.objective || okr.name || 'okr');
+    const okrWithSlug = { ...okr, slug };
 
     if (!okr._id) {
       setToast({ message: "Invalid OKR: missing ID.", type: "error" });
@@ -480,72 +497,72 @@ const handleUpdateOkr = async (okr: any, prevStatus?: string) => {
   });
 
 // --- Fetch OKRs and Users ---
-const fetchOkrs = async () => {
-  setLoading(true);
-  setError("");
-  try {
-    const res = await fetch("/api/okrs");
-    if (!res.ok) throw new Error("Failed to fetch OKRs");
-    const data = await res.json();
-    // Patch: Accept both { okrs: [...] } and raw array response
-    const okrs: Okr[] = Array.isArray(data.okrs) ? data.okrs : Array.isArray(data) ? data : [];
-    console.log('[OKR DEBUG] Parsed OKRs from API:', okrs.length, okrs);
-    // Fetch users for avatar enrichment
-    const usersRes = await fetch("/api/users");
-    if (!usersRes.ok) throw new Error("Failed to fetch users");
-    const usersArr = await usersRes.json();
-    setAllUsers(usersArr);
-    // Enrich owners with user data
-    const enrichedOkrs = okrs.map(okr => {
-  // Find creator user object
-  const creator = usersArr.find((u: any) => u._id === (okr.createdBy || okr.userId));
-  // Patch: Ensure every OKR has a valid slug for navigation
-  let slug = okr.slug;
-  if (!slug || typeof slug !== 'string' || !slug.trim()) {
-    slug = generateSlug(okr.objective || okr.name || 'okr');
-  }
-  return {
-    ...okr,
-    slug,
-    owners: enrichOwnersWithUserData(okr.owners || [], usersArr),
-    createdBy: creator?._id || okr.createdBy || okr.userId || '', // always user ID for filtering
-    createdByName: creator?.name || '', // for display
-    createdByAvatarUrl: creator?.avatarUrl || '',
-    createdByInitials: creator?.name ? creator.name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase() : ''
+  const fetchOkrs = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/okrs");
+      if (!res.ok) throw new Error("Failed to fetch OKRs");
+      const data = await res.json();
+      // Patch: Accept both { okrs: [...] } and raw array response
+      const okrs: Okr[] = Array.isArray(data.okrs) ? data.okrs : Array.isArray(data) ? data : [];
+      console.log('[OKR DEBUG] Parsed OKRs from API:', okrs.length, okrs);
+      // Fetch users for avatar enrichment
+      const usersRes = await fetch("/api/users");
+      if (!usersRes.ok) throw new Error("Failed to fetch users");
+      const usersArr = await usersRes.json();
+      setAllUsers(usersArr);
+      // Enrich owners with user data
+      const enrichedOkrs = okrs.map(okr => {
+        // Find creator user object
+        const creator = usersArr.find((u: any) => u._id === (okr.createdBy || okr.userId));
+        // Patch: Ensure every OKR has a valid slug for navigation
+        let slug = okr.slug;
+        if (!slug || typeof slug !== 'string' || !slug.trim()) {
+          slug = generateSlug(okr.objective || okr.name || 'okr');
+        }
+        return {
+          ...okr,
+          slug,
+          owners: enrichOwnersWithUserData(okr.owners || [], usersArr),
+          createdBy: creator?._id || okr.createdBy || okr.userId || '', // always user ID for filtering
+          createdByName: creator?.name || '', // for display
+          createdByAvatarUrl: creator?.avatarUrl || '',
+          createdByInitials: creator?.name ? creator.name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase() : ''
+        };
+      });
+      setOkrs(enrichedOkrs.filter(okr => okr.status !== 'archived' && okr.status !== 'deleted'));
+      setArchivedOkrs(enrichedOkrs.filter(okr => okr.status === 'archived'));
+      setDeletedOkrs(enrichedOkrs.filter(okr => okr.status === 'deleted'));
+      // --- UX PATCH: If current page is empty after update, go to previous page (for all tabs) ---
+      const PAGE_SIZE = 10;
+      // All OKRs
+      setCurrentPageAll(prev => {
+        const total = Math.ceil(enrichedOkrs.filter(okr => okr.status !== 'archived' && okr.status !== 'deleted').length / PAGE_SIZE);
+        return prev > total ? Math.max(1, total) : prev;
+      });
+      // Archived
+      setCurrentPageArchived(prev => {
+        const total = Math.ceil(enrichedOkrs.filter(okr => okr.status === 'archived').length / PAGE_SIZE);
+        return prev > total ? Math.max(1, total) : prev;
+      });
+      // Deleted
+      setCurrentPageDeleted(prev => {
+        const total = Math.ceil(enrichedOkrs.filter(okr => okr.status === 'deleted').length / PAGE_SIZE);
+        return prev > total ? Math.max(1, total) : prev;
+      });
+    } catch (err: any) {
+      setError(err.message || "Unknown error");
+    } finally {
+      setLoading(false);
+    }
   };
-});
-    setOkrs(enrichedOkrs.filter(okr => okr.status !== 'archived' && okr.status !== 'deleted'));
-    setArchivedOkrs(enrichedOkrs.filter(okr => okr.status === 'archived'));
-    setDeletedOkrs(enrichedOkrs.filter(okr => okr.status === 'deleted'));
-    // --- UX PATCH: If current page is empty after update, go to previous page (for all tabs) ---
-    const PAGE_SIZE = 10;
-    // All OKRs
-    setCurrentPageAll(prev => {
-      const total = Math.ceil(enrichedOkrs.filter(okr => okr.status !== 'archived' && okr.status !== 'deleted').length / PAGE_SIZE);
-      return prev > total ? Math.max(1, total) : prev;
-    });
-    // Archived
-    setCurrentPageArchived(prev => {
-      const total = Math.ceil(enrichedOkrs.filter(okr => okr.status === 'archived').length / PAGE_SIZE);
-      return prev > total ? Math.max(1, total) : prev;
-    });
-    // Deleted
-    setCurrentPageDeleted(prev => {
-      const total = Math.ceil(enrichedOkrs.filter(okr => okr.status === 'deleted').length / PAGE_SIZE);
-      return prev > total ? Math.max(1, total) : prev;
-    });
-  } catch (err: any) {
-    setError(err.message || "Unknown error");
-  } finally {
-    setLoading(false);
-  }
-};
 
-useEffect(() => {
-  fetchOkrs();
-}, []);
+  useEffect(() => {
+    fetchOkrs();
+  }, []);
 
-// ... rest of the code remains the same ...
+  // ... rest of the code remains the same ...
 
   // Timeline log: 2025-06-20, Filter logic unified for all OKR tabs (see DEVELOPMENT_TIMELINE.md)
   const filteredArchivedOkrs: Okr[] = archivedOkrs.filter(okr => {
@@ -555,6 +572,7 @@ useEffect(() => {
       (search.trim() === '' || okr.objective.toLowerCase().includes(search.trim().toLowerCase()) || okr.description?.toLowerCase().includes(search.trim().toLowerCase()) || (typeof okr.name === 'string' && okr.name.toLowerCase().includes(search.trim().toLowerCase()))) &&
       (!filterDate || (normalizedEndDate && normalizedEndDate === filterDate)) &&
       (!filterCategory || okr.category === filterCategory) &&
+      (!filterDepartment || okr.department === filterDepartment) &&
       (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
       (filterCreatedBy.length === 0 || (okr.createdBy && filterCreatedBy.includes(okr.createdBy))) &&
       (filterOwners.length === 0 || ((okr.owners || []).map((o: any) => o._id || o.userId || o.id).some((id: string) => filterOwners.includes(id)))) &&
@@ -562,18 +580,19 @@ useEffect(() => {
     );
   });
   const filteredDeletedOkrs: Okr[] = deletedOkrs.filter(okr => {
-  // Normalize endDate to YYYY-MM-DD (handles ISO, date string, etc)
-  const normalizedEndDate = okr.endDate ? new Date(okr.endDate).toISOString().slice(0, 10) : '';
-  return okr.status === 'deleted' && (
-    (search.trim() === '' || okr.objective.toLowerCase().includes(search.trim().toLowerCase()) || okr.description?.toLowerCase().includes(search.trim().toLowerCase()) || (typeof okr.name === 'string' && okr.name.toLowerCase().includes(search.trim().toLowerCase()))) &&
-    (!filterDate || (normalizedEndDate && normalizedEndDate === filterDate)) &&
-    (!filterCategory || okr.category === filterCategory) &&
-    (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
-    (filterCreatedBy.length === 0 || (okr.createdBy && filterCreatedBy.includes(okr.createdBy))) &&
-    (filterOwners.length === 0 || ((okr.owners || []).map((o: any) => o._id || o.userId || o.id).some((id: string) => filterOwners.includes(id)))) &&
-    (!filterStatus || (okr.status && okr.status.toLowerCase().trim() === filterStatus.toLowerCase().trim()))
-  );
-});
+    // Normalize endDate to YYYY-MM-DD (handles ISO, date string, etc)
+    const normalizedEndDate = okr.endDate ? new Date(okr.endDate).toISOString().slice(0, 10) : '';
+    return okr.status === 'deleted' && (
+      (search.trim() === '' || okr.objective.toLowerCase().includes(search.trim().toLowerCase()) || okr.description?.toLowerCase().includes(search.trim().toLowerCase()) || (typeof okr.name === 'string' && okr.name.toLowerCase().includes(search.trim().toLowerCase()))) &&
+      (!filterDate || (normalizedEndDate && normalizedEndDate === filterDate)) &&
+      (!filterCategory || okr.category === filterCategory) &&
+      (!filterDepartment || okr.department === filterDepartment) &&
+      (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
+      (filterCreatedBy.length === 0 || (okr.createdBy && filterCreatedBy.includes(okr.createdBy))) &&
+      (filterOwners.length === 0 || ((okr.owners || []).map((o: any) => o._id || o.userId || o.id).some((id: string) => filterOwners.includes(id)))) &&
+      (!filterStatus || (okr.status && okr.status.toLowerCase().trim() === filterStatus.toLowerCase().trim()))
+    );
+  });
 
   return (
     <main className="container mx-auto p-4 md:p-6 space-y-6">
@@ -630,18 +649,18 @@ useEffect(() => {
           onKeyDown={e => { if (e.key === 'Escape') setFiltersOpen(false); }}
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-  <div>
-    <MultiSelect
-      options={dedupedUserOptions(allUsers)}
-      value={Array.isArray(filterOwners) ? filterOwners : []}
-      onChange={vals => setFilterOwners(Array.isArray(vals) ? vals : [])}
-      placeholder="Select owners"
-      label="Owners"
-      isMulti={true}
-      className="w-full cursor-pointer"
-      aria-label="Filter by owners"
-    />
-  </div>
+            <div>
+              <MultiSelect
+                options={dedupedUserOptions(allUsers)}
+                value={Array.isArray(filterOwners) ? filterOwners : []}
+                onChange={vals => setFilterOwners(Array.isArray(vals) ? vals : [])}
+                placeholder="Select owners"
+                label="Owners"
+                isMulti={true}
+                className="w-full cursor-pointer"
+                aria-label="Filter by owners"
+              />
+            </div>
             <div>
               <label htmlFor="filter-date" className="block text-sm font-medium mb-1">Due Date</label>
               <DatePickerFilter value={filterDate} onChange={setFilterDate} />
@@ -656,10 +675,9 @@ useEffect(() => {
                 aria-label="Filter by department"
               >
                 <option className="cursor-pointer hover:bg-blue-50" value="">All Departments</option>
-                <option className="cursor-pointer hover:bg-blue-50" value="Engineering">Engineering</option>
-                <option className="cursor-pointer hover:bg-blue-50" value="QA">QA</option>
-                <option className="cursor-pointer hover:bg-blue-50" value="Product">Product</option>
-                {/* TODO: Populate dynamically */}
+                {departments.map(department => (
+                  <option key={department._id} className="cursor-pointer hover:bg-blue-50" value={department.name}>{department.name}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -810,7 +828,7 @@ useEffect(() => {
             setDialogOpen(false);
             setEditOkr(null);
           }}
-          onSave={editOkr ? (okr => handleUpdateOkr({ ...okr, status: (['on_track', 'off_track', 'at_risk', 'completed'].includes(okr.status) ? okr.status : undefined) as Okr['status'] })) : handleAddOkr}
+          onSave={editOkr ? (okr => handleUpdateOkr({ ...okr, status: (['on_track', 'off_track', 'at_risk', 'completed'].includes(okr.status) ? okr.status : 'on_track') as Okr['status'] })) : handleAddOkr}
           initialData={editOkr ? {
             ...editOkr,
             category: editOkr.category === 'Team' || editOkr.category === 'Individual' ? editOkr.category : undefined,
@@ -866,7 +884,8 @@ useEffect(() => {
                       createdByAvatarUrl={okr.createdByAvatarUrl}
                       createdByInitials={okr.createdByInitials}
                       goalType={okr.goalType}
-                      slug={okr.slug || ''}  // TODO: Enforce slug presence at data/model layer
+                      department={okr.department}
+                      slug={okr.slug || generateSlug(okr.objective || 'okr')}  // Generate slug if missing
                       _id={okr._id || ''} 
                     />
                     <div className="absolute top-2 right-2">

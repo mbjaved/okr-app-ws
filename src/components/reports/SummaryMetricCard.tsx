@@ -10,6 +10,9 @@ interface SummaryMetricCardProps {
   colorClass?: string; // e.g. 'text-blue-600'
   description?: string;
   className?: string;
+  onClick?: () => void;
+  role?: string;
+  tabIndex?: number;
 }
 
 export const SummaryMetricCard: React.FC<SummaryMetricCardProps> = ({

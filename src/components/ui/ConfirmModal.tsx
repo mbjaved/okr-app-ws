@@ -39,7 +39,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   return (
     <Modal
       open={open}
-      title={null}
+      title={undefined}
       onClose={onCancel}
       actions={[
         <Button
