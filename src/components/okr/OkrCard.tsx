@@ -13,6 +13,7 @@ import { Card } from "../ui/card";
 import { ProgressRing } from "../ui/ProgressRing";
 import Avatar from "../ui/avatar";
 import { OkrCardMenu } from "./OkrCardMenu";
+import { getOkrQuarters } from "../../lib/quarterUtils";
 
 interface KeyResultCard {
   title: string;
@@ -42,6 +43,9 @@ interface OkrCardProps {
   createdByInitials?: string;
   slug: string; // For navigation
   _id: string;  // For navigation
+  // Quarter information for display
+  startDate?: string;
+  endDate?: string;
 }
 
 // Status pill color mapping
@@ -79,11 +83,19 @@ export const OkrCard: React.FC<OkrCardProps> = ({
   createdByInitials,
   slug,
   _id,
+  startDate,
+  endDate,
 }) => {
   const router = useRouter();
   // Calculate average percent progress for ring
   const percentKRs = (keyResults || []).filter(kr => kr.type === "percent" && typeof kr.progress === "number");
   const avgProgress = percentKRs.length > 0 ? Math.round(percentKRs.reduce((sum, kr) => sum + (kr.progress ?? 0), 0) / percentKRs.length) : 0;
+
+  // Calculate quarters for display
+  const quarters = React.useMemo(() => {
+    if (!startDate || !endDate) return [];
+    return getOkrQuarters(startDate, endDate);
+  }, [startDate, endDate]);
 
   // Navigation handler
   const [navigating, setNavigating] = React.useState(false);
@@ -233,20 +245,83 @@ export const OkrCard: React.FC<OkrCardProps> = ({
               <span className="inline-block bg-[#FAFAFB] text-[#000C2C] px-2 py-0.5 rounded-full text-[11px] font-medium border border-[#B3BCC5] ml-2" aria-label={`Goal type: ${goalType}`}>{goalType === "team" ? "Team Goal" : goalType === "individual" ? "Individual Goal" : goalType}</span>
             )}
           </div>
-          {/* Right: Due date, Department & Status */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="inline-block bg-[#FAFAFB] text-[#0071E1] px-2 py-0.5 rounded-full font-medium border border-[#B3BCC5]" aria-label={`Due date: ${dueDate}`}>Due: {dueDate}</span>
-            {/* Department badge */}
-            {department && (
-              <span className="inline-block bg-[#E8F4FD] text-[#0071E1] px-2 py-0.5 rounded-full font-medium border border-[#B3D9F2]" aria-label={`Department: ${department}`}>{department}</span>
+          {/* Right: Quarters, Due date, Department & Status - Clean Responsive Layout */}
+          <div className="flex items-center flex-wrap gap-2 min-w-0">
+            {/* Quarter badges - Progressive disclosure with clean spacing */}
+            {quarters.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                {/* Show only 1 quarter on very small screens (xs) */}
+                <div className="flex items-center gap-1 sm:hidden">
+                  <span 
+                    className="inline-block bg-[#F0F9FF] text-[#0369A1] px-2.5 py-1 rounded-full font-medium border border-[#7DD3FC] text-xs whitespace-nowrap"
+                    aria-label={`Quarter: ${quarters[0].label}`}
+                  >
+                    {quarters[0].label}
+                  </span>
+                  {quarters.length > 1 && (
+                    <span 
+                      className="inline-block bg-[#E0F2FE] text-[#0369A1] px-2 py-1 rounded-full font-medium border border-[#7DD3FC] text-xs cursor-help whitespace-nowrap"
+                      title={`Additional quarters: ${quarters.slice(1).map(q => q.label).join(', ')}`}
+                      aria-label={`${quarters.length - 1} more quarters`}
+                    >
+                      +{quarters.length - 1}
+                    </span>
+                  )}
+                </div>
+                
+                {/* Show 2 quarters on small screens (sm to lg) */}
+                <div className="hidden sm:flex lg:hidden items-center gap-1">
+                  {quarters.slice(0, 2).map((quarter) => (
+                    <span 
+                      key={quarter.value}
+                      className="inline-block bg-[#F0F9FF] text-[#0369A1] px-2.5 py-1 rounded-full font-medium border border-[#7DD3FC] text-xs whitespace-nowrap"
+                      aria-label={`Quarter: ${quarter.label}`}
+                    >
+                      {quarter.label}
+                    </span>
+                  ))}
+                  {quarters.length > 2 && (
+                    <span 
+                      className="inline-block bg-[#E0F2FE] text-[#0369A1] px-2 py-1 rounded-full font-medium border border-[#7DD3FC] text-xs cursor-help whitespace-nowrap"
+                      title={`Additional quarters: ${quarters.slice(2).map(q => q.label).join(', ')}`}
+                      aria-label={`${quarters.length - 2} more quarters`}
+                    >
+                      +{quarters.length - 2}
+                    </span>
+                  )}
+                </div>
+                
+                {/* Show all quarters on large+ screens */}
+                <div className="hidden lg:flex items-center gap-1">
+                  {quarters.map((quarter) => (
+                    <span 
+                      key={quarter.value}
+                      className="inline-block bg-[#F0F9FF] text-[#0369A1] px-2.5 py-1 rounded-full font-medium border border-[#7DD3FC] text-xs whitespace-nowrap"
+                      aria-label={`Quarter: ${quarter.label}`}
+                    >
+                      {quarter.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
             )}
-            <span className={`inline-block px-2 py-0.5 rounded-full font-semibold border text-xs capitalize ${statusPill[status] || "bg-gray-100 text-gray-600 border-gray-200"}`} aria-label={`Status: ${status}`}>{
-              status === 'on_track' ? 'On Track' :
-              status === 'at_risk' ? 'At Risk' :
-              status === 'off_track' ? 'Off Track' :
-              status === 'completed' ? 'Completed' :
-              status.charAt(0).toUpperCase() + status.slice(1)
-            }</span>
+            
+            {/* Department badge - Hidden on small screens */}
+            {department && (
+              <span className="hidden md:inline-block bg-[#E8F4FD] text-[#0071E1] px-2.5 py-1 rounded-full font-medium border border-[#B3D9F2] text-xs whitespace-nowrap" aria-label={`Department: ${department}`}>{department}</span>
+            )}
+            
+            {/* Essential badges - Due date and Status */}
+            <div className="flex items-center gap-2">
+              <span className="inline-block bg-[#FAFAFB] text-[#0071E1] px-2.5 py-1 rounded-full font-medium border border-[#B3BCC5] text-xs whitespace-nowrap" aria-label={`Due date: ${dueDate}`}>Due: {dueDate}</span>
+              <span className={`inline-block px-2.5 py-1 rounded-full font-semibold border text-xs capitalize whitespace-nowrap ${statusPill[status] || "bg-gray-100 text-gray-600 border-gray-200"}`} aria-label={`Status: ${status}`}>{
+                status === 'on_track' ? 'On Track' :
+                status === 'at_risk' ? 'At Risk' :
+                status === 'off_track' ? 'Off Track' :
+                status === 'completed' ? 'Completed' :
+                status.charAt(0).toUpperCase() + status.slice(1)
+              }</span>
+            </div>
           </div>
         </div>
       </div>

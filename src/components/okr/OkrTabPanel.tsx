@@ -85,8 +85,8 @@ export const OkrTabPanel: React.FC<OkrTabPanelProps> = ({
                 lastUpdated={okr.updatedAt ? okr.updatedAt.slice(0, 10) : "-"}
                 // Support both legacy single owner and new multiple owners array
                 owner={okr.owner || (typeof okr.userId === 'string' ? okr.userId : undefined)}
-                // Pass owners array if available
-                owners={enrichOwnersWithUserData(okr.owners || [], users)}
+                // Pass owners array - already enriched from fetchOkrs, no need to re-enrich
+                owners={okr.owners || []}
                 description={okr.description}
                 createdBy={okr.createdBy}
                 createdByAvatarUrl={okr.createdByAvatarUrl}
@@ -95,6 +95,8 @@ export const OkrTabPanel: React.FC<OkrTabPanelProps> = ({
                 department={okr.department}
                 slug={okr.slug || ''}
                 _id={okr._id}
+                startDate={okr.startDate}
+                endDate={okr.endDate}
               />
               <div className="absolute top-2 right-2">
                 <OkrCardMenu

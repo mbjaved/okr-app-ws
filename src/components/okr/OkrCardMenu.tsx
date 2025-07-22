@@ -63,12 +63,20 @@ export const OkrCardMenu: React.FC<OkrCardMenuProps> = ({
           </DropdownMenu.Item>
         )}
         {status === "archived" && (
-          <DropdownMenu.Item
-            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
-            onSelect={onDelete}
-          >
-            <TrashIcon className="w-4 h-4 text-red-500" /> Delete (Soft)
-          </DropdownMenu.Item>
+          <>
+            <DropdownMenu.Item
+              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
+              onSelect={onRestore}
+            >
+              <ReloadIcon className="w-4 h-4" /> Unarchive
+            </DropdownMenu.Item>
+            <DropdownMenu.Item
+              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
+              onSelect={onDelete}
+            >
+              <TrashIcon className="w-4 h-4 text-red-500" /> Delete (Soft)
+            </DropdownMenu.Item>
+          </>
         )}
         {status === "deleted" && (
           <>
