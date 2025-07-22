@@ -43,6 +43,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       onClose={onCancel}
       actions={[
         <Button
+          key="cancel"
           variant="secondary"
           className="modal-btn modal-cancel-btn"
           onClick={onCancel}
@@ -50,6 +51,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           Cancel
         </Button>,
         <Button
+          key="confirm"
           variant="primary"
           className={`modal-btn ${confirmButtonClass} ${canConfirm ? '' : 'opacity-50 cursor-not-allowed'}`}
           onClick={onConfirm}

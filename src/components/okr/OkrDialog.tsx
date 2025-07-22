@@ -441,8 +441,8 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
                           max={100}
                           className="border rounded px-2 py-1 w-24"
                           placeholder="Progress %"
-                          value={kr.progress ?? 0}
-                          onChange={e => handleKRChange(idx, "progress", Math.max(0, Math.min(100, Number(e.target.value))))}
+                          value={kr.progress === 0 ? '' : kr.progress ?? ''}
+                          onChange={e => handleKRChange(idx, "progress", Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
                         />
                         <span className="text-xs">%</span>
                       </>
@@ -453,16 +453,16 @@ export const OkrDialog: React.FC<OkrDialogProps> = ({ open, onClose, onSave, ini
                           type="number"
                           className="border rounded px-2 py-1 w-20"
                           placeholder="Current"
-                          value={kr.current ?? 0}
-                          onChange={e => handleKRChange(idx, "current", Number(e.target.value))}
+                          value={kr.current === 0 ? '' : kr.current ?? ''}
+                          onChange={e => handleKRChange(idx, "current", Number(e.target.value) || 0)}
                         />
                         <span className="text-xs">/</span>
                         <input
                           type="number"
                           className="border rounded px-2 py-1 w-20"
                           placeholder="Target"
-                          value={kr.target ?? 100}
-                          onChange={e => handleKRChange(idx, "target", Number(e.target.value))}
+                          value={kr.target === 0 ? '' : kr.target ?? ''}
+                          onChange={e => handleKRChange(idx, "target", Number(e.target.value) || 0)}
                         />
                         <input
                           type="text"

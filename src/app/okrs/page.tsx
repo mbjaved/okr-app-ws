@@ -8,6 +8,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useSearchParams } from 'next/navigation';
 import { DatePickerFilter } from "./DatePickerFilter";
 import { enrichOwnersWithUserData } from "../../lib/enrichOwnersWithUserData";
+import { extractQuartersFromOkrs, okrMatchesQuarters, Quarter } from "../../lib/quarterUtils";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import * as RadixTabs from '@radix-ui/react-tabs';
@@ -131,7 +132,7 @@ export default function OKRsPage() {
   const [filterDate, setFilterDate] = useState("");
   const [filterDepartment, setFilterDepartment] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
-  const [filterQuarter, setFilterQuarter] = useState("");
+  const [filterQuarters, setFilterQuarters] = useState<string[]>([]);
   const [filterCreatedBy, setFilterCreatedBy] = useState<string[]>([]);
   const [filterOwners, setFilterOwners] = useState<string[]>([]);
   // --- Sync status query param with filterStatus ---
@@ -191,7 +192,7 @@ export default function OKRsPage() {
     filterDate,
     filterDepartment,
     filterCategory,
-    filterQuarter,
+    ...(filterQuarters && filterQuarters.length > 0 ? [1] : []),
     filterStatus,
     ...(filterCreatedBy && filterCreatedBy.length > 0 ? [1] : []),
     ...(filterOwners && filterOwners.length > 0 ? [1] : [])
@@ -295,24 +296,51 @@ export default function OKRsPage() {
     const okrWithSlug = { ...okr, slug };
 
     if (!okr._id) {
+      console.log('[ARCHIVE DEBUG] Missing OKR ID:', okr);
       setToast({ message: "Invalid OKR: missing ID.", type: "error" });
       return;
     }
     try {
+      console.log('[ARCHIVE DEBUG] Sending PUT request:', {
+        url: `/api/okrs/${okr._id}`,
+        payload: okrWithSlug,
+        payloadStatus: okrWithSlug.status,
+        payloadKeys: Object.keys(okrWithSlug)
+      });
+      
       const res = await fetch(`/api/okrs/${okr._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(okrWithSlug)
       });
       const resData = await res.json();
+      
+      console.log('[ARCHIVE DEBUG] API Response:', {
+        status: res.status,
+        ok: res.ok,
+        data: resData
+      });
+      
       if (!res.ok) {
+        console.log('[ARCHIVE DEBUG] API Error:', resData);
         throw new Error(resData.error || "Failed to update OKR");
       }
       if (prevStatus && okr.status !== prevStatus) {
+        // Contextual toast messages based on specific status transitions
         if (okr.status === "archived") {
           setToast({ message: "OKR archived successfully!", type: "success" });
-        } else if (okr.status === "active") {
+        } else if (okr.status === "active" && prevStatus === "deleted") {
+          setToast({ message: "OKR restored successfully!", type: "success" });
+        } else if (okr.status === "active" && prevStatus === "archived") {
           setToast({ message: "OKR unarchived successfully!", type: "success" });
+        } else if (okr.status === "completed") {
+          setToast({ message: "OKR marked as completed!", type: "success" });
+        } else if (okr.status === "on_track") {
+          setToast({ message: "OKR status updated to On Track!", type: "success" });
+        } else if (okr.status === "at_risk") {
+          setToast({ message: "OKR status updated to At Risk!", type: "success" });
+        } else if (okr.status === "off_track") {
+          setToast({ message: "OKR status updated to Off Track!", type: "success" });
         } else {
           setToast({ message: "OKR updated successfully!", type: "success" });
         }
@@ -439,7 +467,7 @@ export default function OKRsPage() {
         setDeleteConfirm({ okr: null, open: false });
         return;
       }
-      setToast({ message: isHardDelete ? "OKR permanently deleted." : "OKR deleted (soft).", type: "success" });
+      setToast({ message: isHardDelete ? "OKR permanently deleted." : "OKR moved to Deleted tab.", type: "success" });
       setDeleteConfirm({ okr: null, open: false });
       if (isHardDelete) {
         setDeletedOkrs(prev => prev.filter(okr => okr._id !== deleteConfirm.okr?._id));
@@ -481,8 +509,8 @@ export default function OKRsPage() {
     if (filterCategory && okr.category !== filterCategory) return false;
     // Department
     if (filterDepartment && okr.department !== filterDepartment) return false;
-    // Assigned to (owner or keyResults.assignedTo)
-    
+    // Quarter filter - use the same logic as Archived/Deleted tabs
+    if (!okrMatchesQuarters(okr, filterQuarters)) return false;
     // Created by
     // Always treat filterCreatedBy as array of user IDs
     if (Array.isArray(filterCreatedBy) && filterCreatedBy.length > 0 && (!okr.createdBy || !filterCreatedBy.includes(okr.createdBy))) return false;
@@ -562,42 +590,50 @@ export default function OKRsPage() {
     fetchOkrs();
   }, []);
 
-  // ... rest of the code remains the same ...
+  // Extract available quarters from all OKRs for dynamic filter options
+  const availableQuarters = extractQuartersFromOkrs([...okrs, ...archivedOkrs, ...deletedOkrs]);
+  const quarterOptions = availableQuarters.map(quarter => ({
+    value: quarter.value,
+    label: quarter.label
+  }));
 
   // Timeline log: 2025-06-20, Filter logic unified for all OKR tabs (see DEVELOPMENT_TIMELINE.md)
   const filteredArchivedOkrs: Okr[] = archivedOkrs.filter(okr => {
     // Normalize endDate to YYYY-MM-DD (handles ISO, date string, etc)
     const normalizedEndDate = okr.endDate ? new Date(okr.endDate).toISOString().slice(0, 10) : '';
     return okr.status === 'archived' && (
-      (search.trim() === '' || okr.objective.toLowerCase().includes(search.trim().toLowerCase()) || okr.description?.toLowerCase().includes(search.trim().toLowerCase()) || (typeof okr.name === 'string' && okr.name.toLowerCase().includes(search.trim().toLowerCase()))) &&
+      (search.trim() === '' || okr.objective.toLowerCase().includes(search.trim().toLowerCase()) || okr.description?.toLowerCase().includes(search.trim().toLowerCase()) || (typeof okr.name === 'string' && okr.name?.toLowerCase().includes(search.trim().toLowerCase()))) &&
       (!filterDate || (normalizedEndDate && normalizedEndDate === filterDate)) &&
       (!filterCategory || okr.category === filterCategory) &&
       (!filterDepartment || okr.department === filterDepartment) &&
-      (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
+      okrMatchesQuarters(okr, filterQuarters) &&
       (filterCreatedBy.length === 0 || (okr.createdBy && filterCreatedBy.includes(okr.createdBy))) &&
       (filterOwners.length === 0 || ((okr.owners || []).map((o: any) => o._id || o.userId || o.id).some((id: string) => filterOwners.includes(id)))) &&
       (!filterStatus || (okr.status && okr.status.toLowerCase().trim() === filterStatus.toLowerCase().trim()))
     );
   });
+  
   const filteredDeletedOkrs: Okr[] = deletedOkrs.filter(okr => {
     // Normalize endDate to YYYY-MM-DD (handles ISO, date string, etc)
     const normalizedEndDate = okr.endDate ? new Date(okr.endDate).toISOString().slice(0, 10) : '';
     return okr.status === 'deleted' && (
-      (search.trim() === '' || okr.objective.toLowerCase().includes(search.trim().toLowerCase()) || okr.description?.toLowerCase().includes(search.trim().toLowerCase()) || (typeof okr.name === 'string' && okr.name.toLowerCase().includes(search.trim().toLowerCase()))) &&
+      (search.trim() === '' || okr.objective.toLowerCase().includes(search.trim().toLowerCase()) || okr.description?.toLowerCase().includes(search.trim().toLowerCase()) || (typeof okr.name === 'string' && okr.name?.toLowerCase().includes(search.trim().toLowerCase()))) &&
       (!filterDate || (normalizedEndDate && normalizedEndDate === filterDate)) &&
       (!filterCategory || okr.category === filterCategory) &&
       (!filterDepartment || okr.department === filterDepartment) &&
-      (!filterQuarter || (okr.startDate && okr.startDate.includes(filterQuarter))) &&
+      okrMatchesQuarters(okr, filterQuarters) &&
       (filterCreatedBy.length === 0 || (okr.createdBy && filterCreatedBy.includes(okr.createdBy))) &&
       (filterOwners.length === 0 || ((okr.owners || []).map((o: any) => o._id || o.userId || o.id).some((id: string) => filterOwners.includes(id)))) &&
       (!filterStatus || (okr.status && okr.status.toLowerCase().trim() === filterStatus.toLowerCase().trim()))
     );
   });
 
+  // Authentication is handled by useSession({ required: true })
+  // No need to check for loading state as NextAuth handles it automatically
+
   return (
     <main className="container mx-auto p-4 md:p-6 space-y-6">
       {/* Header row: title/desc left, Create OKR button right */}
-      {/* Header row: title/desc left, Create OKR button right-aligned */}
       <div className="w-full flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">OKRs</h1>
@@ -696,20 +732,16 @@ export default function OKRsPage() {
               </select>
             </div>
             <div>
-              <label htmlFor="filter-quarter" className="block text-sm font-medium mb-1">Quarter</label>
-              <select
-                id="filter-quarter"
-                className="w-full rounded border px-3 py-2 pr-10 transition-colors duration-150 hover:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer appearance-none bg-[url('data:image/svg+xml;utf8,<svg fill=\'none\' stroke=\'%234B5563\' stroke-width=\'2\' viewBox=\'0 0 24 24\' xmlns=\'http://www.w3.org/2000/svg\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' d=\'M19 9l-7 7-7-7\'></path></svg>')] bg-no-repeat bg-[right_0.75rem_center] bg-[length:1.25em_1.25em]"
-                value={filterQuarter}
-                onChange={e => setFilterQuarter(e.target.value)}
+              <MultiSelect
+                options={quarterOptions}
+                value={filterQuarters}
+                onChange={vals => setFilterQuarters(Array.isArray(vals) ? vals : [])}
+                placeholder="Select quarters"
+                label="Quarter"
+                isMulti={true}
+                className="w-full cursor-pointer"
                 aria-label="Filter by quarter"
-              >
-                <option className="cursor-pointer hover:bg-blue-50" value="">Select Quarter</option>
-                <option className="cursor-pointer hover:bg-blue-50" value="Q1">Q1</option>
-                <option className="cursor-pointer hover:bg-blue-50" value="Q2">Q2</option>
-                <option className="cursor-pointer hover:bg-blue-50" value="Q3">Q3</option>
-                <option className="cursor-pointer hover:bg-blue-50" value="Q4">Q4</option>
-              </select>
+              />
             </div>
             <div>
               <MultiSelect
@@ -762,8 +794,7 @@ export default function OKRsPage() {
                  setFilterDate("");
                  setFilterDepartment("");
                  setFilterCategory("");
-                 setFilterQuarter("");
-                 
+                 setFilterQuarters([]);
                  setFilterCreatedBy([]);
                  setFilterOwners([]);
                  setFilterStatus("");
@@ -828,10 +859,36 @@ export default function OKRsPage() {
             setDialogOpen(false);
             setEditOkr(null);
           }}
-          onSave={editOkr ? (okr => handleUpdateOkr({ ...okr, status: (['on_track', 'off_track', 'at_risk', 'completed'].includes(okr.status) ? okr.status : 'on_track') as Okr['status'] })) : handleAddOkr}
+          onSave={editOkr ? (okr => {
+            // Create a proper OkrUpdatePayload object with only the expected fields
+            const updatePayload = {
+              _id: editOkr._id,
+              objective: okr.objective,
+              description: okr.description,
+              category: okr.category,
+              owners: okr.owners,
+              startDate: okr.startDate,
+              endDate: okr.endDate,
+              keyResults: okr.keyResults,
+              department: okr.department,
+              status: okr.status as 'on_track' | 'off_track' | 'at_risk' | 'completed'
+            };
+            handleUpdateOkr(updatePayload);
+          }) : handleAddOkr}
           initialData={editOkr ? {
-            ...editOkr,
+            _id: editOkr._id,
+            objective: editOkr.objective,
+            description: editOkr.description,
             category: editOkr.category === 'Team' || editOkr.category === 'Individual' ? editOkr.category : undefined,
+            owners: editOkr.owners,
+            startDate: editOkr.startDate,
+            endDate: editOkr.endDate,
+            keyResults: editOkr.keyResults,
+            department: editOkr.department,
+            status: (['on_track', 'off_track', 'at_risk', 'completed'].includes(editOkr.status as string) 
+              ? editOkr.status as 'on_track' | 'off_track' | 'at_risk' | 'completed'
+              : 'on_track'
+            )
           } : undefined}
         />
       )}
@@ -886,22 +943,27 @@ export default function OKRsPage() {
                       goalType={okr.goalType}
                       department={okr.department}
                       slug={okr.slug || generateSlug(okr.objective || 'okr')}  // Generate slug if missing
-                      _id={okr._id || ''} 
+                      _id={okr._id || ''}
+                      startDate={okr.startDate}
+                      endDate={okr.endDate} 
                     />
                     <div className="absolute top-2 right-2">
                       <OkrCardMenu
                         status={okr.status as 'active' | 'archived' | 'deleted'}
                         onEdit={() => handleEditOkr(okr)}
                         onDuplicate={() => handleDuplicateOkr(okr)}
-                        onArchive={okr.status === 'active' ? () => handleUpdateOkr({ ...okr, status: 'archived' }, okr.status) : okr.status === 'archived' ? () => handleDeleteOkr(okr) : undefined}
+                        onArchive={['active', 'on_track', 'off_track', 'at_risk', 'completed'].includes(okr.status) ? () => {
+                          handleUpdateOkr({ ...okr, status: 'archived' }, okr.status);
+                        } : undefined}
+                        onDelete={okr.status === 'archived' ? () => handleDeleteOkr(okr) : undefined}
                         onRestore={okr.status === 'deleted' ? () => handleUpdateOkr({ ...okr, status: 'active' }, okr.status) : undefined}
                         onHardDelete={okr.status === 'deleted' ? () => handleDeleteOkr(okr) : undefined}
                       />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
           <Pagination
             currentPage={currentPageAll}
             totalPages={Math.ceil(filteredOkrs.length / OKRS_PER_PAGE)}
@@ -941,6 +1003,11 @@ export default function OKRsPage() {
             onPageChange={setCurrentPageArchived}
             onEdit={handleEditOkr}
             onDuplicate={handleDuplicateOkr}
+            onRestore={(okr) => {
+              handleUpdateOkr({ ...okr, status: 'active' }, okr.status);
+              // Redirect to All OKRs tab after successful unarchive
+              setTimeout(() => setTab('all'), 100);
+            }}
             onDelete={handleDeleteOkr}
             tabRole="Archived OKR List"
           />
