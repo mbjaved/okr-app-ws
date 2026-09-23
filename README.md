@@ -2,6 +2,8 @@
 
 A modern Objective and Key Results (OKR) tracking application built with Next.js, NextAuth.js, and MongoDB.
 
+**Live demo:** https://okr-app-ws.vercel.app
+
 ## Features
 
 - User authentication with email/password
@@ -21,8 +23,8 @@ A modern Objective and Key Results (OKR) tracking application built with Next.js
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/okr-app.git
-   cd okr-app
+   git clone https://github.com/mbjaved/okr-app-ws.git
+   cd okr-app-ws
    ```
 
 2. Install dependencies:
